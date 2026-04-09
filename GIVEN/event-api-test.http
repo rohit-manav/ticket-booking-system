@@ -1,0 +1,379 @@
+### ============================================================
+### Event API — IntelliJ HTTP Client Test File
+### Base URL : http://localhost:8080
+### Auth     : Bearer token (add after JWT is implemented)
+### Note     : Run requests top-to-bottom on a fresh DB.
+###            Copy the `id` from each 201 Created response
+###            and paste it into the @eventId variable below.
+### ============================================================
+
+### ---- Shared variables ----------------------------------------
+@baseUrl    = http://localhost:8080
+@adminToken = REPLACE_WITH_ADMIN_JWT_TOKEN
+@eventId    = 1
+
+
+### ============================================================
+###  1. CREATE EVENT — 201 Created (happy path)
+### ============================================================
+### Expected: 201 Created
+###           Location header points to /api/v1/events/{id}
+###           Response body: event with status "INACTIVE"
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Spring Music Festival 2026",
+  "description": "An outdoor music festival featuring top artists.",
+  "venue": "Central Park, New York",
+  "eventDateTime": "2027-06-15T19:00:00Z"
+}
+
+
+### ============================================================
+###  2. CREATE EVENT — 201 Created (no description — optional field)
+### ============================================================
+### Expected: 201 Created, description is null / absent in response
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Tech Summit 2027",
+  "venue": "Silicon Valley Convention Center",
+  "eventDateTime": "2027-09-10T09:00:00Z"
+}
+
+
+### ============================================================
+###  3. CREATE EVENT — 400 Bad Request (missing required fields)
+### ============================================================
+### Expected: 400 ValidationFailed
+###           details[] lists "name" and "venue" as missing
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "description": "Missing name and venue fields"
+}
+
+
+### ============================================================
+###  4. CREATE EVENT — 400 Bad Request (past eventDateTime)
+### ============================================================
+### Expected: 400 ValidationFailed
+###           details[].field = "eventDateTime"
+###           details[].message contains "future"
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Past Event",
+  "venue": "Nowhere",
+  "eventDateTime": "2020-01-01T00:00:00Z"
+}
+
+
+### ============================================================
+###  5. CREATE EVENT — 400 Bad Request (empty request body)
+### ============================================================
+### Expected: 400 ValidationFailed or 400 HttpMessageNotReadable
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{}
+
+
+### ============================================================
+###  6. CREATE EVENT — 400 Bad Request (name exceeds 200 chars)
+### ============================================================
+### Expected: 400 ValidationFailed, details[].field = "name"
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "venue": "Some Venue",
+  "eventDateTime": "2027-12-01T18:00:00Z"
+}
+
+
+### ============================================================
+###  7. UPDATE EVENT — 200 OK (full replace, happy path)
+### ============================================================
+### Pre-condition : event with @eventId exists
+### Expected      : 200 OK, updated fields reflected in response
+### Note          : status is NOT changed by this endpoint
+### ============================================================
+PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Summer Gala 2026 — Updated",
+  "description": "Updated description for the annual gala.",
+  "venue": "Madison Square Garden, New York",
+  "eventDateTime": "2027-07-20T20:00:00Z"
+}
+
+
+### ============================================================
+###  8. UPDATE EVENT — 404 Not Found (non-existent ID)
+### ============================================================
+### Expected: 404 ResourceNotFound
+### ============================================================
+PUT {{baseUrl}}/api/v1/admin/events/999999
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Ghost Event",
+  "venue": "Nowhere",
+  "eventDateTime": "2027-01-01T12:00:00Z"
+}
+
+
+### ============================================================
+###  9. UPDATE EVENT — 400 Bad Request (invalid body)
+### ============================================================
+### Expected: 400 ValidationFailed
+### ============================================================
+PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "name": "",
+  "venue": ""
+}
+
+
+### ============================================================
+### 10. ACTIVATE EVENT — 200 OK (INACTIVE → ACTIVE)
+### ============================================================
+### Pre-condition : event @eventId has status "INACTIVE"
+### Expected      : 200 OK, status changes to "ACTIVE"
+### ============================================================
+PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+
+### ============================================================
+### 11. ACTIVATE EVENT — 409 Conflict (already ACTIVE)
+### ============================================================
+### Pre-condition : event @eventId is already "ACTIVE" (run #10 first)
+### Expected      : 409 EventAlreadyActive
+### ============================================================
+PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+
+### ============================================================
+### 12. DEACTIVATE EVENT — 200 OK (ACTIVE → INACTIVE)
+### ============================================================
+### Pre-condition : event @eventId is "ACTIVE"
+### Expected      : 200 OK, status changes to "INACTIVE"
+### ============================================================
+PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "status": "INACTIVE"
+}
+
+
+### ============================================================
+### 13. DEACTIVATE EVENT — 409 Conflict (already INACTIVE)
+### ============================================================
+### Pre-condition : event @eventId is already "INACTIVE" (run #12 first)
+### Expected      : 409 EventAlreadyInactive
+### ============================================================
+PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "status": "INACTIVE"
+}
+
+
+### ============================================================
+### 14. UPDATE STATUS — 400 Bad Request (invalid status value)
+### ============================================================
+### Expected: 400 ValidationFailed or HttpMessageNotReadable
+###           "PUBLISHED" is not a valid EventStatus enum value
+### ============================================================
+PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "status": "PUBLISHED"
+}
+
+
+### ============================================================
+### 15. UPDATE STATUS — 404 Not Found
+### ============================================================
+### Expected: 404 ResourceNotFound
+### ============================================================
+PATCH {{baseUrl}}/api/v1/admin/events/999999/status
+Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+
+### ============================================================
+### 16. LIST ACTIVE EVENTS — 200 OK (default pagination)
+### ============================================================
+### Pre-condition : at least one ACTIVE event exists
+### Expected      : 200 OK, items[] contains only ACTIVE events
+###                 limit=25, offset=0, links[].rel = "self"
+### ============================================================
+GET {{baseUrl}}/api/v1/events
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 17. LIST ACTIVE EVENTS — 200 OK (custom pagination)
+### ============================================================
+### Expected: limit=5, offset=0, "next" link present if >5 events
+### ============================================================
+GET {{baseUrl}}/api/v1/events?limit=5&offset=0
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 18. LIST ACTIVE EVENTS — 200 OK (page 2)
+### ============================================================
+### Expected: offset=5, "prev" link present
+### ============================================================
+GET {{baseUrl}}/api/v1/events?limit=5&offset=5
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 19. LIST ACTIVE EVENTS — 200 OK (sort by name ascending)
+### ============================================================
+### Expected: items sorted by name A→Z
+### ============================================================
+GET {{baseUrl}}/api/v1/events?sort=name,asc
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 20. LIST ACTIVE EVENTS — 200 OK (sort by eventDateTime desc)
+### ============================================================
+### Expected: latest events first
+### ============================================================
+GET {{baseUrl}}/api/v1/events?sort=eventDateTime,desc
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 21. LIST ACTIVE EVENTS — 200 OK (limit clamped to 100)
+### ============================================================
+### Expected: server silently clamps limit to 100 (no error)
+###           response.limit = 100
+### ============================================================
+GET {{baseUrl}}/api/v1/events?limit=9999
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 22. LIST ACTIVE EVENTS — 200 OK (empty result)
+### ============================================================
+### Pre-condition : no ACTIVE events exist
+### Expected      : 200 OK, items = [], totalCount = 0
+###                 NO "next" or "prev" links
+### ============================================================
+GET {{baseUrl}}/api/v1/events?offset=100000
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 23. GET EVENT BY ID — 200 OK (ACTIVE event, happy path)
+### ============================================================
+### Pre-condition : event @eventId is ACTIVE
+### Expected      : 200 OK, full event object with HATEOAS links
+###                 links include "self" and "seats"
+### ============================================================
+GET {{baseUrl}}/api/v1/events/{{eventId}}
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 24. GET EVENT BY ID — 404 Not Found (event is INACTIVE)
+### ============================================================
+### Pre-condition : event @eventId is INACTIVE (run #12 first)
+### Expected      : 404 ResourceNotFound
+###                 (event existence is NOT disclosed to customer)
+### ============================================================
+GET {{baseUrl}}/api/v1/events/{{eventId}}
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 25. GET EVENT BY ID — 404 Not Found (non-existent ID)
+### ============================================================
+### Expected: 404 ResourceNotFound
+### ============================================================
+GET {{baseUrl}}/api/v1/events/999999
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 26. DELETE EVENT — 204 No Content (happy path)
+### ============================================================
+### Pre-condition : event @eventId has NO confirmed bookings
+### Expected      : 204 No Content, empty body
+### Note          : Creates a fresh event first (see #1) then deletes it
+### ============================================================
+DELETE {{baseUrl}}/api/v1/admin/events/{{eventId}}
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 27. DELETE EVENT — 404 Not Found (already deleted / wrong ID)
+### ============================================================
+### Expected: 404 ResourceNotFound
+### ============================================================
+DELETE {{baseUrl}}/api/v1/admin/events/999999
+# Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 28. DELETE EVENT — 409 Conflict (event has confirmed bookings)
+### ============================================================
+### Pre-condition : event @eventId has at least one CONFIRMED booking
+### Expected      : 409 EventHasBookings
+###                 message suggests deactivating instead of deleting
+### ============================================================
+DELETE {{baseUrl}}/api/v1/admin/events/{{eventId}}
+# Authorization: Bearer {{adminToken}}
+

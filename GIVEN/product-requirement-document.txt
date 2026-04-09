@@ -1,0 +1,63 @@
+Event Ticketing System API
+Product Requirements Document (PRD)
+
+1. Product Overview
+Objective: Build a secure REST backend using Java and Spring Boot for managing events, seats, and ticket bookings.
+System includes authentication, booking lifecycle management, and role-based access control.
+JWT-based authentication and Bearer token secured APIs required.
+
+2. Technical Stack
+Java 17+
+Spring Boot
+Spring Security
+Spring Data JPA (Hibernate)
+PostgreSQL or MySQL
+JWT (open-source library)
+Maven or Gradle
+
+3. User Roles
+ADMIN – Manage events, seats, bookings, users, roles, and permissions.
+CUSTOMER – Register, login, browse events, book seats, manage own bookings.
+
+4. Authentication & Security Requirements
+User registration with encrypted password (BCrypt).
+JWT token generation on login.
+Token must include userId, roles, expiration.
+All secured APIs must use Authorization: Bearer.
+Method-level security using @PreAuthorize.
+
+5. Role & Permission Management
+User ↔ Role (Many-to-Many relationship).
+Role ↔ Permission (Many-to-Many relationship).
+Permission-based API access control.
+Dynamic validation of permissions.
+
+6. Event Management (CRUD)
+Admin can create, update, delete, activate/deactivate events.
+Event fields: id, name, description, venue, eventDateTime, status, audit fields.
+
+7. Seat Inventory Management
+Admin can bulk create seats per event.
+Seat fields: id, eventId, seatNumber, category, price, status (AVAILABLE/BOOKED/DISABLED).
+Seat must be AVAILABLE to be booked.
+
+8. Booking & Transaction Handling
+Customer selects seats for booking.
+System verifies event status and seat availability.
+Booking and seat updates must occur in a single transaction using @Transactional.
+If validation fails, no seat status should change.
+Booking statuses: PENDING_PAYMENT, CONFIRMED, CANCELLED, PAYMENT_FAILED.
+
+9. Database Design Requirements
+Tables: users, roles, permissions, user_roles, role_permissions, events, seats, bookings, booking_items.
+Unique constraint on email and (event_id, seat_number).
+Proper foreign keys and indexing.
+Students must submit ER diagram and schema explanation.
+
+10. Exception Handling
+Global exception handler using @ControllerAdvice.
+Handle validation errors, unauthorized access, forbidden access, not found, conflict, and server errors.
+Standard error response format including timestamp, status, message, and path.
+
+11. Health Check Endpoint
+GET /health endpoint.
