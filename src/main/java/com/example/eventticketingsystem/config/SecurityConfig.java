@@ -5,40 +5,61 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * Security configuration.
- *
- * HTTP-level rules: all requests are permitted for now — JWT filter will be wired here
- * once the auth module is implemented.
- *
- * Method-level security is active via @EnableMethodSecurity:
- *   @PreAuthorize("hasRole('ADMIN')")            — admin-only operations
- *   @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')") — shared operations
- *   @PreAuthorize("hasRole('CUSTOMER')")         — customer-only operations
- *
- * When a new role (e.g. MODERATOR) needs access to an endpoint, simply update
- * the @PreAuthorize expression on the relevant method — no new controller or URL needed.
- */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity          // enables @PreAuthorize / @PostAuthorize
+@EnableMethodSecurity   // ← enables @PreAuthorize on controller methods
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(csrf -> csrf.disable())
+
             .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth ->
-                // TODO: Replace with JWT filter and restrict accordingly once auth is implemented.
-                // For now every request is permitted so development can continue.
-                auth.anyRequest().permitAll()
-            );
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+
+            .authorizeHttpRequests(auth -> auth
+                // Public endpoints
+                .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/health").permitAll()
+
+                // Swagger UI
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**",
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
+
+                // All other endpoints require authentication
+                .anyRequest().authenticated()
+            )
+
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable())
+
+            // Register JWT filter BEFORE Spring's UsernamePasswordAuthenticationFilter
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 }

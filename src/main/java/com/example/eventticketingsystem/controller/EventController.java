@@ -7,6 +7,7 @@ import com.example.eventticketingsystem.dto.event.request.EventUpdateRequest;
 import com.example.eventticketingsystem.dto.event.response.EventResponse;
 import com.example.eventticketingsystem.service.EventService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,9 +19,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
 
 /**
  * Single controller for all Event operations.
@@ -49,9 +47,7 @@ public class EventController {
     @PostMapping("/api/v1/admin/events")
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody EventCreateRequest request) {
         EventResponse response = eventService.createEvent(request);
-        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString();
-        URI location = URI.create(baseUrl + "/api/v1/events/" + response.getId());
-        return ResponseEntity.created(location).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

@@ -64,14 +64,7 @@ All collection `GET` endpoints return this wrapper:
 }
 ```
 
-> `next` / `prev` navigation links are **not implemented** (HATEOAS deferred).
-
----
-
-### HATEOAS Link Schema
-
-> **Status: Deferred — not implemented in the current version.**
-> All `links` arrays shown in the original design are omitted from responses until HATEOAS is implemented.
+> `next` / `prev` navigation links are **not implemented**.
 
 ---
 
@@ -147,20 +140,7 @@ All collection `GET` endpoints return this wrapper:
 
 #### Success Response — `201 Created`
 
-```json
-{
-  "id": 3,
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "roles": [],
-  "createdAt": "2026-04-04T14:00:00Z",
-  "updatedAt": "2026-04-04T14:00:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/users/3", "action": "GET", "types": ["application/json"] },
-    { "rel": "login", "href": "http://localhost:8080/api/v1/auth/login", "action": "POST", "types": ["application/json"] }
-  ]
-}
-```
+*(No response body)*
 
 #### Failure Responses
 
@@ -334,31 +314,18 @@ GET /api/v1/admin/users?limit=25&offset=0&sort=name,asc
       "id": 3,
       "name": "Jane Doe",
       "email": "jane@example.com",
-      "roles": ["CUSTOMER"],
-      "createdAt": "2026-01-15T10:30:00Z",
-      "updatedAt": "2026-01-15T10:30:00Z",
-      "links": [
-        { "rel": "self", "href": "http://localhost:8080/api/v1/admin/users/3", "action": "GET", "types": ["application/json"] }
-      ]
+      "roles": ["CUSTOMER"]
     },
     {
       "id": 1,
       "name": "Admin User",
       "email": "admin@example.com",
-      "roles": ["ADMIN"],
-      "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-01-01T00:00:00Z",
-      "links": [
-        { "rel": "self", "href": "http://localhost:8080/api/v1/admin/users/1", "action": "GET", "types": ["application/json"] }
-      ]
+      "roles": ["ADMIN"]
     }
   ],
   "limit": 25,
   "offset": 0,
-  "totalCount": 2,
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/users?limit=25&offset=0", "action": "GET" }
-  ]
+  "totalCount": 2
 }
 ```
 
@@ -387,12 +354,7 @@ GET /api/v1/admin/users/3
   "id": 3,
   "name": "Jane Doe",
   "email": "jane@example.com",
-  "roles": ["CUSTOMER"],
-  "createdAt": "2026-01-15T10:30:00Z",
-  "updatedAt": "2026-01-15T10:30:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/users/3", "action": "GET", "types": ["application/json"] }
-  ]
+  "roles": ["CUSTOMER"]
 }
 ```
 
@@ -431,12 +393,7 @@ GET /api/v1/admin/users/3
   "id": 3,
   "name": "Jane Doe",
   "email": "jane@example.com",
-  "roles": ["CUSTOMER", "ADMIN"],
-  "createdAt": "2026-01-15T10:30:00Z",
-  "updatedAt": "2026-04-04T14:30:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/users/3", "action": "GET", "types": ["application/json"] }
-  ]
+  "roles": ["CUSTOMER", "ADMIN"]
 }
 ```
 
@@ -507,30 +464,17 @@ GET /api/v1/admin/roles?limit=25&offset=0
     {
       "id": 1,
       "name": "ADMIN",
-      "permissions": ["CREATE_EVENT", "MANAGE_SEATS", "VIEW_BOOKINGS"],
-      "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-01-01T00:00:00Z",
-      "links": [
-        { "rel": "self", "href": "http://localhost:8080/api/v1/admin/roles/1", "action": "GET", "types": ["application/json"] }
-      ]
+      "permissions": ["CREATE_EVENT", "MANAGE_SEATS", "VIEW_BOOKINGS"]
     },
     {
       "id": 2,
       "name": "CUSTOMER",
-      "permissions": ["BOOK_SEAT", "VIEW_EVENT"],
-      "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-01-01T00:00:00Z",
-      "links": [
-        { "rel": "self", "href": "http://localhost:8080/api/v1/admin/roles/2", "action": "GET", "types": ["application/json"] }
-      ]
+      "permissions": ["BOOK_SEAT", "VIEW_EVENT"]
     }
   ],
   "limit": 25,
   "offset": 0,
-  "totalCount": 2,
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/roles?limit=25&offset=0", "action": "GET" }
-  ]
+  "totalCount": 2
 }
 ```
 
@@ -558,12 +502,7 @@ GET /api/v1/admin/roles?limit=25&offset=0
 {
   "id": 5,
   "name": "MODERATOR",
-  "permissions": [],
-  "createdAt": "2026-04-04T14:30:00Z",
-  "updatedAt": "2026-04-04T14:30:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/roles/5", "action": "GET", "types": ["application/json"] }
-  ]
+  "permissions": []
 }
 ```
 
@@ -631,12 +570,7 @@ GET /api/v1/admin/roles/1
 {
   "id": 1,
   "name": "ADMIN",
-  "permissions": ["CREATE_EVENT", "MANAGE_SEATS", "VIEW_BOOKINGS"],
-  "createdAt": "2026-01-01T00:00:00Z",
-  "updatedAt": "2026-01-01T00:00:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/roles/1", "action": "GET", "types": ["application/json"] }
-  ]
+  "permissions": ["CREATE_EVENT", "MANAGE_SEATS", "VIEW_BOOKINGS"]
 }
 ```
 
@@ -674,12 +608,7 @@ GET /api/v1/admin/roles/1
 {
   "id": 1,
   "name": "SUPER_ADMIN",
-  "permissions": ["CREATE_EVENT", "MANAGE_SEATS", "VIEW_BOOKINGS"],
-  "createdAt": "2026-01-01T00:00:00Z",
-  "updatedAt": "2026-04-04T14:30:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/roles/1", "action": "GET", "types": ["application/json"] }
-  ]
+  "permissions": ["CREATE_EVENT", "MANAGE_SEATS", "VIEW_BOOKINGS"]
 }
 ```
 
@@ -790,10 +719,7 @@ DELETE /api/v1/admin/roles/5
   "name": "CUSTOMER",
   "permissions": ["BOOK_SEAT", "VIEW_EVENT", "CANCEL_BOOKING"],
   "createdAt": "2026-01-01T00:00:00Z",
-  "updatedAt": "2026-04-04T14:30:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/roles/2", "action": "GET", "types": ["application/json"] }
-  ]
+  "updatedAt": "2026-04-04T14:30:00Z"
 }
 ```
 
@@ -850,27 +776,18 @@ GET /api/v1/admin/permissions?limit=25&offset=0
       "id": 10,
       "name": "CREATE_EVENT",
       "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-01-01T00:00:00Z",
-      "links": [
-        { "rel": "self", "href": "http://localhost:8080/api/v1/admin/permissions/10", "action": "GET", "types": ["application/json"] }
-      ]
+      "updatedAt": "2026-01-01T00:00:00Z"
     },
     {
       "id": 11,
       "name": "BOOK_SEAT",
       "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-01-01T00:00:00Z",
-      "links": [
-        { "rel": "self", "href": "http://localhost:8080/api/v1/admin/permissions/11", "action": "GET", "types": ["application/json"] }
-      ]
+      "updatedAt": "2026-01-01T00:00:00Z"
     }
   ],
   "limit": 25,
   "offset": 0,
-  "totalCount": 2,
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/permissions?limit=25&offset=0", "action": "GET" }
-  ]
+  "totalCount": 2
 }
 ```
 
@@ -899,10 +816,7 @@ GET /api/v1/admin/permissions?limit=25&offset=0
   "id": 15,
   "name": "DISABLE_SEAT",
   "createdAt": "2026-04-04T14:30:00Z",
-  "updatedAt": "2026-04-04T14:30:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/permissions/15", "action": "GET", "types": ["application/json"] }
-  ]
+  "updatedAt": "2026-04-04T14:30:00Z"
 }
 ```
 
@@ -971,10 +885,7 @@ GET /api/v1/admin/permissions/10
   "id": 10,
   "name": "CREATE_EVENT",
   "createdAt": "2026-01-01T00:00:00Z",
-  "updatedAt": "2026-01-01T00:00:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/permissions/10", "action": "GET", "types": ["application/json"] }
-  ]
+  "updatedAt": "2026-01-01T00:00:00Z"
 }
 ```
 
@@ -1013,10 +924,7 @@ GET /api/v1/admin/permissions/10
   "id": 10,
   "name": "MANAGE_SEATS",
   "createdAt": "2026-01-01T00:00:00Z",
-  "updatedAt": "2026-04-04T14:30:00Z",
-  "links": [
-    { "rel": "self", "href": "http://localhost:8080/api/v1/admin/permissions/10", "action": "GET", "types": ["application/json"] }
-  ]
+  "updatedAt": "2026-04-04T14:30:00Z"
 }
 ```
 
