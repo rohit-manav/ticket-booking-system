@@ -18,16 +18,6 @@ public class RegisterRequest {
     @Size(min = 8, message = "Password must be at least 8 characters.")
     private String password;
 
-    // Constructors
-    public RegisterRequest() {}
-
-    public RegisterRequest(String name, String email, String password) {
-        this.name = name;
-        this.email = email;
-        this.password = password;
-    }
-
-    // Getters & Setters
     public String getName() {
         return name;
     }
@@ -52,4 +42,3 @@ public class RegisterRequest {
         this.password = password;
     }
 }
-

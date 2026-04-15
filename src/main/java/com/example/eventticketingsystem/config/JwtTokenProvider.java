@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 /**
  * Utility to generate, parse, and validate JWT tokens.
- * Used by both AuthServiceImpl (generation) and JwtAuthenticationFilter (validation).
+ * Used by both AuthServiceImplementation (generation) and JwtAuthenticationFilter (validation).
  */
 @Component
 public class JwtTokenProvider {

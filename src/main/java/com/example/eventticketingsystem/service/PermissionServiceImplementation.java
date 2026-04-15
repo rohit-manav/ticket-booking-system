@@ -15,11 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-public class PermissionServiceImpl implements PermissionService {
+public class PermissionServiceImplementation implements PermissionService {
 
     private final PermissionRepository permissionRepository;
 
-    public PermissionServiceImpl(PermissionRepository permissionRepository) {
+    public PermissionServiceImplementation(PermissionRepository permissionRepository) {
         this.permissionRepository = permissionRepository;
     }
 
@@ -39,7 +39,6 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     @Transactional
     public PermissionResponse createPermission(PermissionRequest request) {
-        // Check for duplicate name
         if (permissionRepository.existsByName(request.getName())) {
             throw new ConflictException("DuplicatePermissionName",
                     "A permission with name '" + request.getName() + "' already exists.");
@@ -68,7 +67,6 @@ public class PermissionServiceImpl implements PermissionService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "The permission with id '" + permissionId + "' was not found."));
 
-        // Check for duplicate name (excluding current permission)
         permissionRepository.findByName(request.getName()).ifPresent(existing -> {
             if (!existing.getId().equals(permissionId)) {
                 throw new ConflictException("DuplicatePermissionName",
@@ -89,7 +87,6 @@ public class PermissionServiceImpl implements PermissionService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "The permission with id '" + permissionId + "' was not found."));
 
-        // Check if permission is assigned to any roles
         if (!permission.getRoles().isEmpty()) {
             throw new ConflictException("PermissionInUse",
                     "Permission '" + permission.getName() + "' cannot be deleted because it is assigned to one or more roles.");

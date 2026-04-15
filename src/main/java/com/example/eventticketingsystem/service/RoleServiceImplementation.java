@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public class RoleServiceImpl implements RoleService {
+public class RoleServiceImplementation implements RoleService {
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
 
-    public RoleServiceImpl(RoleRepository roleRepository, PermissionRepository permissionRepository) {
+    public RoleServiceImplementation(RoleRepository roleRepository, PermissionRepository permissionRepository) {
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
     }
@@ -46,7 +46,6 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RoleResponse createRole(RoleRequest request) {
-        // Check for duplicate name
         if (roleRepository.existsByName(request.getName())) {
             throw new ConflictException("DuplicateRoleName",
                     "A role with name '" + request.getName() + "' already exists.");
@@ -75,7 +74,6 @@ public class RoleServiceImpl implements RoleService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "The role with id '" + roleId + "' was not found."));
 
-        // Check for duplicate name (excluding current role)
         roleRepository.findByName(request.getName()).ifPresent(existing -> {
             if (!existing.getId().equals(roleId)) {
                 throw new ConflictException("DuplicateRoleName",
@@ -96,7 +94,6 @@ public class RoleServiceImpl implements RoleService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "The role with id '" + roleId + "' was not found."));
 
-        // Check if role is assigned to any users
         if (!role.getUsers().isEmpty()) {
             throw new ConflictException("RoleInUse",
                     "Role '" + role.getName() + "' cannot be deleted because it is assigned to one or more users.");
@@ -112,7 +109,6 @@ public class RoleServiceImpl implements RoleService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "The role with id '" + roleId + "' was not found."));
 
-        // Fetch all requested permissions
         Set<Permission> permissions = new HashSet<>();
         for (Long permissionId : request.getPermissionIds()) {
             Permission permission = permissionRepository.findById(permissionId)
@@ -121,7 +117,6 @@ public class RoleServiceImpl implements RoleService {
             permissions.add(permission);
         }
 
-        // Replace all permissions
         role.setPermissions(permissions);
         role = roleRepository.save(role);
 

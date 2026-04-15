@@ -21,12 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-public class SeatServiceImpl implements SeatService {
+public class SeatServiceImplementation implements SeatService {
 
     private final EventRepository eventRepository;
     private final SeatRepository seatRepository;
 
-    public SeatServiceImpl(EventRepository eventRepository, SeatRepository seatRepository) {
+    public SeatServiceImplementation(EventRepository eventRepository, SeatRepository seatRepository) {
         this.eventRepository = eventRepository;
         this.seatRepository = seatRepository;
     }
@@ -36,12 +36,10 @@ public class SeatServiceImpl implements SeatService {
     public SeatCreateResponse createSeats(Long eventId, SeatCreateRequest request) {
         Event event = findEventOrThrow(eventId);
 
-        // Check for duplicate seat numbers within the request itself
         List<String> requestedNumbers = request.getSeats().stream()
                 .map(s -> s.getSeatNumber().trim())
                 .toList();
 
-        // Check against existing seats in the database
         List<Seat> duplicates = seatRepository.findByEvent_IdAndSeatNumberIn(eventId, requestedNumbers);
         if (!duplicates.isEmpty()) {
             List<FieldErrorDetail> details = duplicates.stream()
@@ -136,3 +134,4 @@ public class SeatServiceImpl implements SeatService {
         return response;
     }
 }
+

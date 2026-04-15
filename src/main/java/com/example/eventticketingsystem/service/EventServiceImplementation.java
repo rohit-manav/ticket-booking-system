@@ -24,7 +24,7 @@ import java.util.Map;
 
 @Service
 @Transactional
-public class EventServiceImpl implements EventService {
+public class EventServiceImplementation implements EventService {
 
     private static final int DEFAULT_LIMIT = 25;
     private static final int MAX_LIMIT = 100;
@@ -39,8 +39,8 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final BookingRepository bookingRepository;
 
-    public EventServiceImpl(EventRepository eventRepository,
-                            BookingRepository bookingRepository) {
+    public EventServiceImplementation(EventRepository eventRepository,
+                                      BookingRepository bookingRepository) {
         this.eventRepository = eventRepository;
         this.bookingRepository = bookingRepository;
     }
@@ -111,7 +111,6 @@ public class EventServiceImpl implements EventService {
                 ? Sort.by(sortSpec.sortBy()).ascending()
                 : Sort.by(sortSpec.sortBy()).descending();
 
-        // Spring Data uses page number, so derive it from offset/limit
         int pageNumber = resolvedOffset / resolvedLimit;
         PageRequest pageRequest = PageRequest.of(pageNumber, resolvedLimit, springSort);
 

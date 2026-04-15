@@ -35,17 +35,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class BookingServiceImpl implements BookingService {
+public class BookingServiceImplementation implements BookingService {
 
     private final BookingRepository bookingRepository;
     private final EventRepository eventRepository;
     private final SeatRepository seatRepository;
     private final UserRepository userRepository;
 
-    public BookingServiceImpl(BookingRepository bookingRepository,
-                               EventRepository eventRepository,
-                               SeatRepository seatRepository,
-                               UserRepository userRepository) {
+    public BookingServiceImplementation(BookingRepository bookingRepository,
+                                        EventRepository eventRepository,
+                                        SeatRepository seatRepository,
+                                        UserRepository userRepository) {
         this.bookingRepository = bookingRepository;
         this.eventRepository = eventRepository;
         this.seatRepository = seatRepository;

@@ -10,8 +10,6 @@ public class LoginResponse {
     private Long userId;
     private Set<String> roles;
 
-    // Constructors
-    public LoginResponse() {}
 
     public LoginResponse(String accessToken, String tokenType, Long expiresIn, Long userId, Set<String> roles) {
         this.accessToken = accessToken;
@@ -21,7 +19,6 @@ public class LoginResponse {
         this.roles = roles;
     }
 
-    // Getters & Setters
     public String getAccessToken() {
         return accessToken;
     }
