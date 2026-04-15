@@ -74,8 +74,7 @@ public class AuthServiceImplementation implements AuthService {
 
         String token = generateToken(user.getId(), roleNames);
 
-        long expiresInSeconds = jwtTokenProvider.getJwtExpiration() / 1000;
-        return new LoginResponse(token, "Bearer", expiresInSeconds, user.getId(), roleNames);
+        return new LoginResponse(token, "Bearer");
     }
 
     private String generateToken(Long userId, Set<String> roles) {
@@ -91,4 +90,3 @@ public class AuthServiceImplementation implements AuthService {
                 .compact();
     }
 }
-

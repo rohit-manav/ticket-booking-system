@@ -25,9 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
  * Access is controlled at the method level via @PreAuthorize:
  *   - ADMIN  : write operations (bulk-create / update a seat)
  *   - ADMIN or CUSTOMER : read operation (list seats for an event)
- *
- * Adding a new role (e.g. MODERATOR) that needs write access requires only an update
- * to the @PreAuthorize expression — no new controller or URL is needed.
  */
 @RestController
 public class SeatController {

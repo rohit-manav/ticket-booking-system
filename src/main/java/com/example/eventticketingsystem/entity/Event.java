@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.Set;
                 @Index(name = "idx_events_event_date_time", columnList = "event_date_time")
         }
 )
+@SQLRestriction("deleted = false")
 public class Event extends AuditableEntity {
 
     @Id

@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -23,6 +24,7 @@ import java.time.Instant;
                 @Index(name = "idx_booking_items_seat_id", columnList = "seat_id")
         }
 )
+@SQLRestriction("deleted = false")
 public class BookingItem {
 
     @Id
@@ -43,6 +45,9 @@ public class BookingItem {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
 
     public Long getId() {
         return id;
@@ -74,6 +79,14 @@ public class BookingItem {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }
 

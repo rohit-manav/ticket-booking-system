@@ -5,13 +5,15 @@ import com.example.eventticketingsystem.dto.event.request.EventCreateRequest;
 import com.example.eventticketingsystem.dto.event.request.EventStatusUpdateRequest;
 import com.example.eventticketingsystem.dto.event.request.EventUpdateRequest;
 import com.example.eventticketingsystem.dto.event.response.EventResponse;
+import com.example.eventticketingsystem.entity.Booking;
+import com.example.eventticketingsystem.entity.BookingItem;
 import com.example.eventticketingsystem.entity.Event;
-import com.example.eventticketingsystem.entity.enums.BookingStatus;
+import com.example.eventticketingsystem.entity.Seat;
 import com.example.eventticketingsystem.entity.enums.EventStatus;
 import com.example.eventticketingsystem.exception.ConflictException;
 import com.example.eventticketingsystem.exception.ResourceNotFoundException;
-import com.example.eventticketingsystem.repository.BookingRepository;
 import com.example.eventticketingsystem.repository.EventRepository;
+import com.example.eventticketingsystem.repository.SeatRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -37,12 +39,12 @@ public class EventServiceImplementation implements EventService {
     );
 
     private final EventRepository eventRepository;
-    private final BookingRepository bookingRepository;
+    private final SeatRepository seatRepository;
 
     public EventServiceImplementation(EventRepository eventRepository,
-                                      BookingRepository bookingRepository) {
+                                      SeatRepository seatRepository) {
         this.eventRepository = eventRepository;
-        this.bookingRepository = bookingRepository;
+        this.seatRepository = seatRepository;
     }
 
     @Override
@@ -75,14 +77,25 @@ public class EventServiceImplementation implements EventService {
     @Override
     public void deleteEvent(Long eventId) {
         Event event = getEventEntity(eventId);
-        boolean hasConfirmedBookings = bookingRepository.existsByEvent_IdAndStatus(eventId, BookingStatus.CONFIRMED);
-        if (hasConfirmedBookings) {
-            throw new ConflictException(
-                    "EventHasBookings",
-                    "Event '" + event.getName() + "' cannot be deleted because it has confirmed bookings. Deactivate the event instead."
-            );
+
+        // Soft-delete all bookings and their booking items for this event
+        for (Booking booking : event.getBookings()) {
+            for (BookingItem item : booking.getItems()) {
+                item.setDeleted(true);
+            }
+            booking.setDeleted(true);
         }
-        eventRepository.delete(event);
+
+        // Soft-delete all seats for this event
+        List<Seat> seats = seatRepository.findByEvent_Id(eventId);
+        for (Seat seat : seats) {
+            seat.setDeleted(true);
+        }
+        seatRepository.saveAll(seats);
+
+        // Soft-delete the event itself
+        event.setDeleted(true);
+        eventRepository.save(event);
     }
 
     @Override

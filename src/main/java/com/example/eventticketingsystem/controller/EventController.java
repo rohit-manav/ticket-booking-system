@@ -26,9 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
  * Access is controlled at the method level via @PreAuthorize:
  *   - ADMIN  : write operations (create / update / delete / status change)
  *   - ADMIN or CUSTOMER : read operations (browse / get details)
- *
- * Adding a new role (e.g. MODERATOR) that needs write access requires only an update
- * to the @PreAuthorize expression — no new controller or URL is needed.
  */
 @RestController
 public class EventController {
@@ -92,5 +89,3 @@ public class EventController {
         return eventService.getEventById(eventId);
     }
 }
-
-

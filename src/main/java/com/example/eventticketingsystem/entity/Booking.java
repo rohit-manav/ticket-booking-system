@@ -17,6 +17,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -32,6 +33,7 @@ import java.util.Set;
                 @Index(name = "idx_bookings_user_id_status", columnList = "user_id, status")
         }
 )
+@SQLRestriction("deleted = false")
 public class Booking extends AuditableEntity {
 
     @Id

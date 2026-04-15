@@ -4,13 +4,15 @@ import com.example.eventticketingsystem.dto.common.PagedResponse;
 import com.example.eventticketingsystem.dto.event.request.EventCreateRequest;
 import com.example.eventticketingsystem.dto.event.request.EventStatusUpdateRequest;
 import com.example.eventticketingsystem.dto.event.response.EventResponse;
+import com.example.eventticketingsystem.entity.Booking;
+import com.example.eventticketingsystem.entity.BookingItem;
 import com.example.eventticketingsystem.entity.Event;
-import com.example.eventticketingsystem.entity.enums.BookingStatus;
+import com.example.eventticketingsystem.entity.Seat;
 import com.example.eventticketingsystem.entity.enums.EventStatus;
 import com.example.eventticketingsystem.exception.ConflictException;
 import com.example.eventticketingsystem.exception.ResourceNotFoundException;
-import com.example.eventticketingsystem.repository.BookingRepository;
 import com.example.eventticketingsystem.repository.EventRepository;
+import com.example.eventticketingsystem.repository.SeatRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,14 +24,16 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,7 +44,7 @@ class EventServiceImplementationTest {
     private EventRepository eventRepository;
 
     @Mock
-    private BookingRepository bookingRepository;
+    private SeatRepository seatRepository;
 
     @InjectMocks
     private EventServiceImplementation eventService;
@@ -107,18 +111,36 @@ class EventServiceImplementationTest {
     }
 
     @Test
-    void deleteEvent_throwsConflictWhenConfirmedBookingsExist() {
+    void deleteEvent_softDeletesEventSeatsBookingsAndItems() {
         Event event = new Event();
         event.setName("Booked Event");
         ReflectionTestUtils.setField(event, "id", 20L);
 
+        // Set up a booking with one item
+        BookingItem item = new BookingItem();
+        ReflectionTestUtils.setField(item, "id", 100L);
+
+        Booking booking = new Booking();
+        ReflectionTestUtils.setField(booking, "id", 50L);
+        booking.setItems(new HashSet<>(Set.of(item)));
+
+        ReflectionTestUtils.setField(event, "bookings", new HashSet<>(Set.of(booking)));
+
+        // Set up a seat
+        Seat seat = new Seat();
+        ReflectionTestUtils.setField(seat, "id", 200L);
+
         when(eventRepository.findById(20L)).thenReturn(Optional.of(event));
-        when(bookingRepository.existsByEvent_IdAndStatus(20L, BookingStatus.CONFIRMED)).thenReturn(true);
+        when(seatRepository.findByEvent_Id(20L)).thenReturn(List.of(seat));
 
-        ConflictException ex = assertThrows(ConflictException.class, () -> eventService.deleteEvent(20L));
+        eventService.deleteEvent(20L);
 
-        assertEquals("EventHasBookings", ex.getErrorCode());
-        verify(eventRepository, never()).delete(any(Event.class));
+        assertTrue(event.isDeleted());
+        assertTrue(booking.isDeleted());
+        assertTrue(item.isDeleted());
+        assertTrue(seat.isDeleted());
+        verify(seatRepository).saveAll(List.of(seat));
+        verify(eventRepository).save(event);
     }
 
     @Test

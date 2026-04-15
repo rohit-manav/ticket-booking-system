@@ -16,6 +16,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
@@ -31,6 +32,7 @@ import java.util.Set;
                 @Index(name = "idx_seats_event_id_status", columnList = "event_id, status")
         }
 )
+@SQLRestriction("deleted = false")
 public class Seat extends AuditableEntity {
 
     @Id
