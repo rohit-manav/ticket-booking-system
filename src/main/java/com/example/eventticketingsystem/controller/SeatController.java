@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Single controller for all Seat operations.
- *
  * Access is controlled at the method level via @PreAuthorize:
  *   - ADMIN  : write operations (bulk-create / update a seat)
  *   - ADMIN or CUSTOMER : read operation (list seats for an event)

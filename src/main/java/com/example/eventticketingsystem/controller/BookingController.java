@@ -18,11 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Single controller for all Booking operations.
- *
  * Access is controlled at the method level via @PreAuthorize:
  *   - CUSTOMER : create, view own bookings, confirm/cancel/payment-failed
  *   - ADMIN    : view all bookings, view any booking by id
- *
  * The currentUserId parameter represents the authenticated user's ID.
  * TODO: Replace @RequestParam userId with @AuthenticationPrincipal once JWT is wired up.
  */

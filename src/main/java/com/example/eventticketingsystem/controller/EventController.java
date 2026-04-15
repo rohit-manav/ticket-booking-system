@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Single controller for all Event operations.
- *
  * Access is controlled at the method level via @PreAuthorize:
  *   - ADMIN  : write operations (create / update / delete / status change)
  *   - ADMIN or CUSTOMER : read operations (browse / get details)
