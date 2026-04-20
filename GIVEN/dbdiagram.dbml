@@ -1,0 +1,145 @@
+// DBML for dbdiagram.io
+
+Enum event_status {
+  ACTIVE
+  INACTIVE
+}
+
+Enum seat_status {
+  AVAILABLE
+  BOOKED
+  DISABLED
+}
+
+Enum booking_status {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  PAYMENT_FAILED
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(100) [not null]
+  email varchar(255) [not null, unique]
+  password varchar(255) [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted boolean [not null, default: false]
+}
+
+Table roles {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted boolean [not null, default: false]
+}
+
+Table permissions {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted boolean [not null, default: false]
+}
+
+Table user_roles {
+  user_id bigint [not null]
+  role_id bigint [not null]
+
+  Indexes {
+    (user_id, role_id) [pk]
+  }
+}
+
+Table role_permissions {
+  role_id bigint [not null]
+  permission_id bigint [not null]
+
+  Indexes {
+    (role_id, permission_id) [pk]
+  }
+}
+
+Table events {
+  id bigint [pk, increment]
+  name varchar(200) [not null]
+  description text
+  venue varchar(300) [not null]
+  event_date_time timestamp [not null]
+  status event_status [not null, default: 'INACTIVE']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted boolean [not null, default: false]
+
+  Indexes {
+    (status)
+    (event_date_time)
+  }
+}
+
+Table seats {
+  id bigint [pk, increment]
+  event_id bigint [not null]
+  seat_number varchar(20) [not null]
+  category varchar(50) [not null]
+  price decimal(10,2) [not null]
+  status seat_status [not null, default: 'AVAILABLE']
+  version bigint [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted boolean [not null, default: false]
+
+  Indexes {
+    (event_id, seat_number) [unique]
+    (event_id, status)
+  }
+}
+
+Table bookings {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  event_id bigint [not null]
+  status booking_status [not null, default: 'PENDING_PAYMENT']
+  total_amount decimal(10,2) [not null]
+  booking_date timestamp [not null]
+  version bigint [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted boolean [not null, default: false]
+
+  Indexes {
+    (event_id)
+    (status)
+    (user_id, status)
+  }
+}
+
+Table booking_items {
+  id bigint [pk, increment]
+  booking_id bigint [not null]
+  seat_id bigint [not null]
+  price_at_booking decimal(10,2) [not null]
+  created_at timestamp [not null]
+  deleted boolean [not null, default: false]
+
+  Indexes {
+    (booking_id)
+    (seat_id)
+  }
+}
+
+Ref: user_roles.user_id > users.id
+Ref: user_roles.role_id > roles.id
+Ref: role_permissions.role_id > roles.id
+Ref: role_permissions.permission_id > permissions.id
+
+Ref: bookings.user_id > users.id
+Ref: bookings.event_id > events.id
+
+Ref: seats.event_id > events.id
+
+Ref: booking_items.booking_id > bookings.id
+Ref: booking_items.seat_id > seats.id
+
