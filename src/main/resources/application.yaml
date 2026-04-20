@@ -19,7 +19,7 @@ spring:
     open-in-view: false
 
 jwt:
-  secret: this-is-a-very-long-secret-key-for-jwt-signing-change-it-in-production-must-be-at-least-64-bytes-long-for-hs512
+  secret: Ofk62VcNHTDpZ3d3C7SQItHERO5FM0QV6MZxXNnzfbSDbg+fuS74PyfZWpfdef1/hlc+9W5GRBSQ+6jCjVQMpA==
   expiration: 86400000  # 24 hours in milliseconds
 
 server:
