@@ -1,28 +1,44 @@
 ### ============================================================
 ### Event API — IntelliJ HTTP Client Test File
-### Base URL : http://localhost:8080
-### Auth     : Bearer token (add after JWT is implemented)
+### Base URL : http://localhost:8081
+### Auth     : Bearer token required (ADMIN for /api/v1/admin/**, ADMIN or CUSTOMER for /api/v1/events)
 ### Note     : Run requests top-to-bottom on a fresh DB.
 ###            Copy the `id` from each 201 Created response
 ###            and paste it into the @eventId variable below.
 ### ============================================================
 
 ### ---- Shared variables ----------------------------------------
-@baseUrl    = http://localhost:8080
-@adminToken = REPLACE_WITH_ADMIN_JWT_TOKEN
+@baseUrl    = http://localhost:8081
 @eventId    = 1
+
+### ============================================================
+###  0. AUTH LOGIN — 200 OK (get JWT token for admin)
+### ============================================================
+### Expected: 200 OK with accessToken in response
+### Note    : Token is captured into @adminToken for subsequent requests
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Admin@1234"
+}
+
+> {%
+  client.global.set("adminToken", response.body.accessToken);
+%}
 
 
 ### ============================================================
 ###  1. CREATE EVENT — 201 Created (happy path)
 ### ============================================================
 ### Expected: 201 Created
-###           Location header points to /api/v1/events/{id}
 ###           Response body: event with status "INACTIVE"
 ### ============================================================
 POST {{baseUrl}}/api/v1/admin/events
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "name": "Spring Music Festival 2026",
@@ -39,7 +55,7 @@ Content-Type: application/json
 ### ============================================================
 POST {{baseUrl}}/api/v1/admin/events
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "name": "Tech Summit 2027",
@@ -56,7 +72,7 @@ Content-Type: application/json
 ### ============================================================
 POST {{baseUrl}}/api/v1/admin/events
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "description": "Missing name and venue fields"
@@ -72,7 +88,7 @@ Content-Type: application/json
 ### ============================================================
 POST {{baseUrl}}/api/v1/admin/events
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "name": "Past Event",
@@ -88,7 +104,7 @@ Content-Type: application/json
 ### ============================================================
 POST {{baseUrl}}/api/v1/admin/events
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {}
 
@@ -100,7 +116,7 @@ Content-Type: application/json
 ### ============================================================
 POST {{baseUrl}}/api/v1/admin/events
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -118,7 +134,7 @@ Content-Type: application/json
 ### ============================================================
 PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "name": "Summer Gala 2026 — Updated",
@@ -135,7 +151,7 @@ Content-Type: application/json
 ### ============================================================
 PUT {{baseUrl}}/api/v1/admin/events/999999
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "name": "Ghost Event",
@@ -151,7 +167,7 @@ Content-Type: application/json
 ### ============================================================
 PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "name": "",
@@ -167,7 +183,7 @@ Content-Type: application/json
 ### ============================================================
 PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "status": "ACTIVE"
@@ -182,7 +198,7 @@ Content-Type: application/json
 ### ============================================================
 PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "status": "ACTIVE"
@@ -197,7 +213,7 @@ Content-Type: application/json
 ### ============================================================
 PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "status": "INACTIVE"
@@ -212,7 +228,7 @@ Content-Type: application/json
 ### ============================================================
 PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "status": "INACTIVE"
@@ -227,7 +243,7 @@ Content-Type: application/json
 ### ============================================================
 PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "status": "PUBLISHED"
@@ -241,7 +257,7 @@ Content-Type: application/json
 ### ============================================================
 PATCH {{baseUrl}}/api/v1/admin/events/999999/status
 Content-Type: application/json
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "status": "ACTIVE"
@@ -253,28 +269,28 @@ Content-Type: application/json
 ### ============================================================
 ### Pre-condition : at least one ACTIVE event exists
 ### Expected      : 200 OK, items[] contains only ACTIVE events
-###                 limit=25, offset=0, links[].rel = "self"
+###                 limit=25, offset=0, totalCount present
 ### ============================================================
 GET {{baseUrl}}/api/v1/events
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
 ### 17. LIST ACTIVE EVENTS — 200 OK (custom pagination)
 ### ============================================================
-### Expected: limit=5, offset=0, "next" link present if >5 events
+### Expected: limit=5, offset=0
 ### ============================================================
 GET {{baseUrl}}/api/v1/events?limit=5&offset=0
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
 ### 18. LIST ACTIVE EVENTS — 200 OK (page 2)
 ### ============================================================
-### Expected: offset=5, "prev" link present
+### Expected: offset=5
 ### ============================================================
 GET {{baseUrl}}/api/v1/events?limit=5&offset=5
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
@@ -283,7 +299,7 @@ GET {{baseUrl}}/api/v1/events?limit=5&offset=5
 ### Expected: items sorted by name A→Z
 ### ============================================================
 GET {{baseUrl}}/api/v1/events?sort=name,asc
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
@@ -292,7 +308,7 @@ GET {{baseUrl}}/api/v1/events?sort=name,asc
 ### Expected: latest events first
 ### ============================================================
 GET {{baseUrl}}/api/v1/events?sort=eventDateTime,desc
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
@@ -302,7 +318,7 @@ GET {{baseUrl}}/api/v1/events?sort=eventDateTime,desc
 ###           response.limit = 100
 ### ============================================================
 GET {{baseUrl}}/api/v1/events?limit=9999
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
@@ -310,21 +326,19 @@ GET {{baseUrl}}/api/v1/events?limit=9999
 ### ============================================================
 ### Pre-condition : no ACTIVE events exist
 ### Expected      : 200 OK, items = [], totalCount = 0
-###                 NO "next" or "prev" links
 ### ============================================================
 GET {{baseUrl}}/api/v1/events?offset=100000
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
 ### 23. GET EVENT BY ID — 200 OK (ACTIVE event, happy path)
 ### ============================================================
 ### Pre-condition : event @eventId is ACTIVE
-### Expected      : 200 OK, full event object with HATEOAS links
-###                 links include "self" and "seats"
+### Expected      : 200 OK, full event object
 ### ============================================================
 GET {{baseUrl}}/api/v1/events/{{eventId}}
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
@@ -335,7 +349,7 @@ GET {{baseUrl}}/api/v1/events/{{eventId}}
 ###                 (event existence is NOT disclosed to customer)
 ### ============================================================
 GET {{baseUrl}}/api/v1/events/{{eventId}}
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
@@ -344,18 +358,17 @@ GET {{baseUrl}}/api/v1/events/{{eventId}}
 ### Expected: 404 ResourceNotFound
 ### ============================================================
 GET {{baseUrl}}/api/v1/events/999999
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
 ### 26. DELETE EVENT — 204 No Content (happy path)
 ### ============================================================
-### Pre-condition : event @eventId has NO confirmed bookings
 ### Expected      : 204 No Content, empty body
-### Note          : Creates a fresh event first (see #1) then deletes it
+### Note          : Soft-deletes the event and related seats/bookings
 ### ============================================================
 DELETE {{baseUrl}}/api/v1/admin/events/{{eventId}}
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
@@ -364,16 +377,14 @@ DELETE {{baseUrl}}/api/v1/admin/events/{{eventId}}
 ### Expected: 404 ResourceNotFound
 ### ============================================================
 DELETE {{baseUrl}}/api/v1/admin/events/999999
-# Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
-### 28. DELETE EVENT — 409 Conflict (event has confirmed bookings)
+### 28. DELETE EVENT — 204 No Content (event has confirmed bookings)
 ### ============================================================
 ### Pre-condition : event @eventId has at least one CONFIRMED booking
-### Expected      : 409 EventHasBookings
-###                 message suggests deactivating instead of deleting
+### Expected      : 204 No Content (soft delete still allowed)
 ### ============================================================
 DELETE {{baseUrl}}/api/v1/admin/events/{{eventId}}
-# Authorization: Bearer {{adminToken}}
-
+Authorization: Bearer {{adminToken}}

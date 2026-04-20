@@ -109,6 +109,10 @@ public class EventServiceImplementation implements EventService {
             throw new ConflictException("EventAlreadyInactive", "Event '" + event.getName() + "' is already in INACTIVE status.");
         }
 
+        if (request.getStatus() == EventStatus.ACTIVE && !seatRepository.existsByEvent_Id(eventId)) {
+            throw new ConflictException("EventHasNoSeats", "Event '" + event.getName() + "' cannot be activated without seats.");
+        }
+
         event.setStatus(request.getStatus());
         return toResponse(eventRepository.save(event));
     }
@@ -179,11 +183,8 @@ public class EventServiceImplementation implements EventService {
         response.setVenue(event.getVenue());
         response.setEventDateTime(event.getEventDateTime());
         response.setStatus(event.getStatus());
-        response.setCreatedAt(event.getCreatedAt());
-        response.setUpdatedAt(event.getUpdatedAt());
         return response;
     }
 
     private record SortSpec(String sortBy, boolean ascending) {}
 }
-

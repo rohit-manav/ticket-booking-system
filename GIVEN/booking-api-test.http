@@ -1,0 +1,232 @@
+### ============================================================
+### Booking API — IntelliJ HTTP Client Test File
+### Base URL : http://localhost:8081
+### Auth     : Bearer token required (CUSTOMER for /api/v1/bookings, ADMIN for /api/v1/admin/**)
+### Note     : Run requests top-to-bottom on a fresh DB.
+### ============================================================
+
+### ---- Shared variables ----------------------------------------
+@baseUrl   = http://localhost:8081
+@customerUserId = 7
+
+### ============================================================
+###  0. AUTH LOGIN — 200 OK (get JWT token for customer)
+### ============================================================
+### Expected: 200 OK with accessToken in response
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer@example.com",
+  "password": "customer@1234"
+}
+
+> {%
+  client.log("CUSTOMER LOGIN status=" + response.status);
+  client.log(JSON.stringify(response.body));
+  const customerToken = response.body.accessToken;
+  client.global.set("customerToken", customerToken);
+%}
+
+
+### ============================================================
+###  1. AUTH LOGIN — 200 OK (get JWT token for admin)
+### ============================================================
+### Expected: 200 OK with accessToken in response
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Admin@1234"
+}
+
+> {%
+  client.log("ADMIN LOGIN status=" + response.status);
+  client.log(JSON.stringify(response.body));
+  client.global.set("adminToken", response.body.accessToken);
+%}
+
+
+### ============================================================
+###  2. CREATE EVENT — 201 Created (booking tests need an event)
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Booking Test Event",
+  "description": "Event used for booking API tests",
+  "venue": "Test Venue",
+  "eventDateTime": "2027-06-15T19:00:00Z"
+}
+
+> {%
+  client.log("CREATE EVENT status=" + response.status);
+  client.log(JSON.stringify(response.body));
+  client.global.set("eventId", response.body.id);
+%}
+
+
+### ============================================================
+###  3. BULK CREATE SEATS — 201 Created
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "seats": [
+    { "seatNumber": "A1", "category": "VIP", "price": 199.99 },
+    { "seatNumber": "A2", "category": "VIP", "price": 199.99 },
+    { "seatNumber": "B1", "category": "STANDARD", "price": 79.99 }
+  ]
+}
+
+> {%
+  client.log("CREATE SEATS status=" + response.status);
+  client.log(JSON.stringify(response.body));
+  client.global.set("seatId1", response.body.items[0].id);
+  client.global.set("seatId2", response.body.items[1].id);
+%}
+
+
+### ============================================================
+###  4. ACTIVATE EVENT — 200 OK
+### ============================================================
+PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+> {%
+  client.log("ACTIVATE EVENT status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}
+
+
+### ============================================================
+###  5. CREATE BOOKING — 201 Created (happy path)
+### ============================================================
+POST {{baseUrl}}/api/v1/bookings?userId={{customerUserId}}
+Content-Type: application/json
+Authorization: Bearer {{customerToken}}
+
+{
+  "eventId": {{eventId}},
+  "seatIds": [{{seatId1}}, {{seatId2}}]
+}
+
+> {%
+  client.log("CREATE BOOKING status=" + response.status);
+  client.log(JSON.stringify(response.body));
+  client.global.set("bookingId", response.body.id);
+%}
+
+
+### ============================================================
+###  6. CREATE BOOKING — 409 Conflict (seat unavailable)
+### ============================================================
+POST {{baseUrl}}/api/v1/bookings?userId={{customerUserId}}
+Content-Type: application/json
+Authorization: Bearer {{customerToken}}
+
+{
+  "eventId": {{eventId}},
+  "seatIds": [{{seatId1}}]
+}
+
+> {%
+  client.log("CREATE BOOKING (UNAVAILABLE) status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}
+
+
+### ============================================================
+###  7. GET MY BOOKINGS — 200 OK
+### ============================================================
+GET {{baseUrl}}/api/v1/bookings?userId={{customerUserId}}
+Authorization: Bearer {{customerToken}}
+
+> {%
+  client.log("GET MY BOOKINGS status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}
+
+
+### ============================================================
+###  8. GET BOOKING BY ID — 200 OK (owner)
+### ============================================================
+GET {{baseUrl}}/api/v1/bookings/{{bookingId}}?userId={{customerUserId}}
+Authorization: Bearer {{customerToken}}
+
+> {%
+  client.log("GET BOOKING BY ID status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}
+
+
+### ============================================================
+###  9. CONFIRM BOOKING — 200 OK
+### ============================================================
+POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/confirm?userId={{customerUserId}}
+Authorization: Bearer {{customerToken}}
+
+> {%
+  client.log("CONFIRM BOOKING status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}
+
+
+### ============================================================
+### 10. CONFIRM BOOKING — 409 Conflict (already confirmed)
+### ============================================================
+POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/confirm?userId={{customerUserId}}
+Authorization: Bearer {{customerToken}}
+
+> {%
+  client.log("CONFIRM BOOKING (REPEAT) status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}
+
+
+### ============================================================
+### 11. CANCEL BOOKING — 409 Conflict (invalid transition after confirm)
+### ============================================================
+POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel?userId={{customerUserId}}
+Authorization: Bearer {{customerToken}}
+
+> {%
+  client.log("CANCEL BOOKING status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}
+
+
+### ============================================================
+### 12. ADMIN LIST ALL BOOKINGS — 200 OK
+### ============================================================
+GET {{baseUrl}}/api/v1/admin/bookings
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.log("ADMIN LIST BOOKINGS status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}
+
+
+### ============================================================
+### 13. ADMIN GET BOOKING BY ID — 200 OK
+### ============================================================
+GET {{baseUrl}}/api/v1/admin/bookings/{{bookingId}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.log("ADMIN GET BOOKING status=" + response.status);
+  client.log(JSON.stringify(response.body));
+%}

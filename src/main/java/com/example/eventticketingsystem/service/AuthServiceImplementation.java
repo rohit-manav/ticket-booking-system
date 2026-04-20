@@ -52,7 +52,7 @@ public class AuthServiceImplementation implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         Role customerRole = roleRepository.findByName("CUSTOMER")
-                .orElseThrow(() -> new RuntimeException("CUSTOMER role not found. Run bootstrap script."));
+                .orElseThrow(() -> new RuntimeException("CUSTOMER role not found."));
         user.setRoles(new HashSet<>(Set.of(customerRole)));
 
         userRepository.save(user);

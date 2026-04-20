@@ -1,0 +1,174 @@
+### ============================================================
+### Seat API — IntelliJ HTTP Client Test File
+### Base URL : http://localhost:8081
+### Auth     : Bearer token required (ADMIN for /api/v1/admin/**, ADMIN or CUSTOMER for /api/v1/events)
+### Note     : Run requests top-to-bottom on a fresh DB.
+###            Copy the `id` values from responses when needed.
+### ============================================================
+
+### ---- Shared variables ----------------------------------------
+@baseUrl   = http://localhost:8081
+
+### ============================================================
+###  0. AUTH LOGIN — 200 OK (get JWT token for admin)
+### ============================================================
+### Expected: 200 OK with accessToken in response
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Admin@1234"
+}
+
+> {%
+  client.global.set("adminToken", response.body.accessToken);
+%}
+
+
+### ============================================================
+###  1. CREATE EVENT — 201 Created (seat tests need an event)
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Seat Test Event",
+  "description": "Event used for seat API tests",
+  "venue": "Test Venue",
+  "eventDateTime": "2027-06-15T19:00:00Z"
+}
+
+> {%
+  client.global.set("eventId", response.body.id);
+%}
+
+
+### ============================================================
+###  2. LIST SEATS — 403 Forbidden (event is INACTIVE)
+### ============================================================
+GET {{baseUrl}}/api/v1/events/{{eventId}}/seats
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+###  3. BULK CREATE SEATS — 201 Created (happy path)
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "seats": [
+    { "seatNumber": "A1", "category": "VIP", "price": 199.99 },
+    { "seatNumber": "A2", "category": "VIP", "price": 199.99 },
+    { "seatNumber": "B1", "category": "STANDARD", "price": 79.99 }
+  ]
+}
+
+> {%
+  client.global.set("seatId", response.body.items[0].id);
+%}
+
+
+### ============================================================
+###  4. BULK CREATE SEATS — 409 Conflict (duplicate seat number)
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "seats": [
+    { "seatNumber": "A1", "category": "VIP", "price": 199.99 }
+  ]
+}
+
+
+### ============================================================
+###  5. BULK CREATE SEATS — 400 Bad Request (empty list)
+### ============================================================
+POST {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "seats": []
+}
+
+
+### ============================================================
+###  6. ACTIVATE EVENT — 200 OK (seats now exist)
+### ============================================================
+PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+
+### ============================================================
+###  7. LIST SEATS — 200 OK (all seats)
+### ============================================================
+GET {{baseUrl}}/api/v1/events/{{eventId}}/seats
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+###  8. LIST SEATS — 200 OK (filter by status)
+### ============================================================
+GET {{baseUrl}}/api/v1/events/{{eventId}}/seats?status=AVAILABLE
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+###  9. LIST SEATS — 200 OK (filter by category)
+### ============================================================
+GET {{baseUrl}}/api/v1/events/{{eventId}}/seats?category=VIP
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 10. UPDATE SEAT — 200 OK (change category/price/status)
+### ============================================================
+PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats/{{seatId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "category": "STANDARD",
+  "price": 99.99,
+  "status": "DISABLED"
+}
+
+
+### ============================================================
+### 11. UPDATE SEAT — 400 Bad Request (status BOOKED not allowed)
+### ============================================================
+PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats/{{seatId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "category": "STANDARD",
+  "price": 99.99,
+  "status": "BOOKED"
+}
+
+
+### ============================================================
+### 12. UPDATE SEAT — 404 Not Found (invalid seatId)
+### ============================================================
+PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats/999999
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "category": "STANDARD",
+  "price": 99.99,
+  "status": "AVAILABLE"
+}

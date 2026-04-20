@@ -59,6 +59,7 @@ public class Booking extends AuditableEntity {
     @Column(name = "booking_date", nullable = false, updatable = false)
     private Instant bookingDate;
 
+    @SuppressWarnings("unused") // Managed by Hibernate for optimistic locking
     @Version
     @Column(nullable = false)
     private Long version;
@@ -106,9 +107,6 @@ public class Booking extends AuditableEntity {
         return bookingDate;
     }
 
-    public Long getVersion() {
-        return version;
-    }
 
     public Set<BookingItem> getItems() {
         return items;

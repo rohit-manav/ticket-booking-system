@@ -2,7 +2,7 @@
 
 > **Source:** Product Requirements Document + Epics & User Stories
 > **Tech Stack:** Spring Data JPA / Hibernate · PostgreSQL / MySQL
-> **Last Updated:** 2026-04-04
+> **Last Updated:** 2026-04-20
 
 ---
 
@@ -18,6 +18,7 @@ erDiagram
         VARCHAR password
         TIMESTAMP created_at
         TIMESTAMP updated_at
+        BOOLEAN deleted
     }
 
     ROLES {
@@ -25,6 +26,7 @@ erDiagram
         VARCHAR name UK
         TIMESTAMP created_at
         TIMESTAMP updated_at
+        BOOLEAN deleted
     }
 
     PERMISSIONS {
@@ -32,6 +34,7 @@ erDiagram
         VARCHAR name UK
         TIMESTAMP created_at
         TIMESTAMP updated_at
+        BOOLEAN deleted
     }
 
     EVENTS {
@@ -43,6 +46,7 @@ erDiagram
         ENUM status
         TIMESTAMP created_at
         TIMESTAMP updated_at
+        BOOLEAN deleted
     }
 
     SEATS {
@@ -52,8 +56,10 @@ erDiagram
         VARCHAR category
         DECIMAL price
         ENUM status
+        BIGINT version
         TIMESTAMP created_at
         TIMESTAMP updated_at
+        BOOLEAN deleted
     }
 
     BOOKINGS {
@@ -63,8 +69,10 @@ erDiagram
         ENUM status
         DECIMAL total_amount
         TIMESTAMP booking_date
+        BIGINT version
         TIMESTAMP created_at
         TIMESTAMP updated_at
+        BOOLEAN deleted
     }
 
     BOOKING_ITEMS {
@@ -73,6 +81,7 @@ erDiagram
         BIGINT seat_id FK
         DECIMAL price_at_booking
         TIMESTAMP created_at
+        BOOLEAN deleted
     }
 
     %% Relationships
@@ -105,6 +114,7 @@ Stores all registered users (both ADMIN and CUSTOMER).
 | `password` | VARCHAR(255) | NOT NULL | BCrypt-hashed; never returned in API responses |
 | `created_at` | TIMESTAMP | NOT NULL | Set on insert; managed by JPA `@CreationTimestamp` |
 | `updated_at` | TIMESTAMP | NOT NULL | Updated on every change; managed by `@UpdateTimestamp` |
+| `deleted` | BOOLEAN | NOT NULL, DEFAULT `false` | Soft delete flag |
 
 **Indexes:**
 - `UNIQUE INDEX` on `email`
@@ -121,6 +131,7 @@ Defines named roles that can be assigned to users (e.g., `ADMIN`, `CUSTOMER`).
 | `name` | VARCHAR(100) | NOT NULL, UNIQUE | e.g., `ADMIN`, `CUSTOMER`, `MODERATOR` |
 | `created_at` | TIMESTAMP | NOT NULL | Set on insert; managed by `@CreationTimestamp` |
 | `updated_at` | TIMESTAMP | NOT NULL | Managed by `@UpdateTimestamp` |
+| `deleted` | BOOLEAN | NOT NULL, DEFAULT `false` | Soft delete flag |
 
 **Indexes:**
 - `UNIQUE INDEX` on `name`
@@ -137,6 +148,7 @@ Defines granular permission strings that can be assigned to roles (e.g., `CREATE
 | `name` | VARCHAR(100) | NOT NULL, UNIQUE | e.g., `CREATE_EVENT`, `BOOK_SEAT`, `DISABLE_SEAT` |
 | `created_at` | TIMESTAMP | NOT NULL | Set on insert; managed by `@CreationTimestamp` |
 | `updated_at` | TIMESTAMP | NOT NULL | Managed by `@UpdateTimestamp` |
+| `deleted` | BOOLEAN | NOT NULL, DEFAULT `false` | Soft delete flag |
 
 **Indexes:**
 - `UNIQUE INDEX` on `name`
@@ -191,6 +203,7 @@ Stores all events managed by admins.
 | `status` | ENUM | NOT NULL, DEFAULT `'INACTIVE'` | `ACTIVE` \| `INACTIVE` |
 | `created_at` | TIMESTAMP | NOT NULL | Managed by `@CreationTimestamp` |
 | `updated_at` | TIMESTAMP | NOT NULL | Managed by `@UpdateTimestamp` |
+| `deleted` | BOOLEAN | NOT NULL, DEFAULT `false` | Soft delete flag |
 
 **Allowed `status` values:** `ACTIVE` | `INACTIVE`
 
@@ -212,8 +225,10 @@ Stores individual seats belonging to an event.
 | `category` | VARCHAR(50) | NOT NULL | e.g., `VIP`, `STANDARD`, `ECONOMY` |
 | `price` | DECIMAL(10,2) | NOT NULL, CHECK > 0 | Current seat price |
 | `status` | ENUM | NOT NULL, DEFAULT `'AVAILABLE'` | `AVAILABLE` \| `BOOKED` \| `DISABLED` |
+| `version` | BIGINT | NOT NULL | Optimistic locking version |
 | `created_at` | TIMESTAMP | NOT NULL | Set on insert; managed by `@CreationTimestamp` |
 | `updated_at` | TIMESTAMP | NOT NULL | Managed by `@UpdateTimestamp` |
+| `deleted` | BOOLEAN | NOT NULL, DEFAULT `false` | Soft delete flag |
 
 **Allowed `status` values:** `AVAILABLE` | `BOOKED` | `DISABLED`
 
@@ -226,7 +241,6 @@ Stores individual seats belonging to an event.
 **Indexes:**
 - `UNIQUE INDEX` on `(event_id, seat_number)`
 - `INDEX` on `(event_id, status)` (frequent query: find AVAILABLE seats for an event)
-- `INDEX` on `event_id`
 
 ---
 
@@ -242,8 +256,10 @@ Represents a customer's booking header record for one or more seats at an event.
 | `status` | ENUM | NOT NULL, DEFAULT `'PENDING_PAYMENT'` | Booking lifecycle status |
 | `total_amount` | DECIMAL(10,2) | NOT NULL, CHECK > 0 | Sum of all `BOOKING_ITEMS.price_at_booking`; snapshotted at booking time |
 | `booking_date` | TIMESTAMP | NOT NULL | The date/time the booking was initiated; set on insert |
+| `version` | BIGINT | NOT NULL | Optimistic locking version |
 | `created_at` | TIMESTAMP | NOT NULL | Managed by `@CreationTimestamp` |
 | `updated_at` | TIMESTAMP | NOT NULL | Managed by `@UpdateTimestamp` |
+| `deleted` | BOOLEAN | NOT NULL, DEFAULT `false` | Soft delete flag |
 
 **Allowed `status` values:**
 
@@ -259,7 +275,6 @@ Represents a customer's booking header record for one or more seats at an event.
 - `event_id` → `EVENTS(id)`
 
 **Indexes:**
-- `INDEX` on `user_id` (customer queries their own bookings)
 - `INDEX` on `event_id` (admin filters bookings by event)
 - `INDEX` on `status` (admin filters bookings by status)
 - `INDEX` on `(user_id, status)` (customer filters own bookings by status)
@@ -277,6 +292,7 @@ Stores each individual seat line within a booking. `price_at_booking` is a **pri
 | `seat_id` | BIGINT | NOT NULL, FK → `SEATS.id` | The seat that was booked |
 | `price_at_booking` | DECIMAL(10,2) | NOT NULL, CHECK > 0 | **Snapshot** — price paid at booking time; never changes after insert |
 | `created_at` | TIMESTAMP | NOT NULL | Set on insert; managed by `@CreationTimestamp` |
+| `deleted` | BOOLEAN | NOT NULL, DEFAULT `false` | Soft delete flag |
 
 **Foreign Keys:**
 - `booking_id` → `BOOKINGS(id)` ON DELETE CASCADE

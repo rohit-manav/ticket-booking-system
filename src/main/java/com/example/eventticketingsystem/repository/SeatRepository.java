@@ -20,7 +20,6 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<Seat> findByEvent_IdAndSeatNumberIn(Long eventId, List<String> seatNumbers);
 
     Optional<Seat> findByIdAndEvent_Id(Long seatId, Long eventId);
+
+    boolean existsByEvent_Id(Long eventId);
 }
-
-
-

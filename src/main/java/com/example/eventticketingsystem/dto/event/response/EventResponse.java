@@ -11,8 +11,6 @@ public class EventResponse {
     private String venue;
     private Instant eventDateTime;
     private EventStatus status;
-    private Instant createdAt;
-    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -61,21 +59,4 @@ public class EventResponse {
     public void setStatus(EventStatus status) {
         this.status = status;
     }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }
-

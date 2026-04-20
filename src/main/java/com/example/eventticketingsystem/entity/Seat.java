@@ -56,6 +56,7 @@ public class Seat extends AuditableEntity {
     @Column(nullable = false, length = 20)
     private SeatStatus status = SeatStatus.AVAILABLE;
 
+    @SuppressWarnings("unused") // Managed by Hibernate for optimistic locking
     @Version
     @Column(nullable = false)
     private Long version;
@@ -107,9 +108,6 @@ public class Seat extends AuditableEntity {
         this.status = status;
     }
 
-    public Long getVersion() {
-        return version;
-    }
 
     public Set<BookingItem> getBookingItems() {
         return bookingItems;
