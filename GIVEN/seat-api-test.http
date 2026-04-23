@@ -1,7 +1,7 @@
 ### ============================================================
 ### Seat API — IntelliJ HTTP Client Test File
 ### Base URL : http://localhost:8081
-### Auth     : Bearer token required (ADMIN for /api/v1/admin/**, ADMIN or CUSTOMER for /api/v1/events)
+### Auth     : Bearer token required (ADMIN for write operations, ADMIN or CUSTOMER for read operations)
 ### Note     : Run requests top-to-bottom on a fresh DB.
 ###            Copy the `id` values from responses when needed.
 ### ============================================================
@@ -30,7 +30,7 @@ Content-Type: application/json
 ### ============================================================
 ###  1. CREATE EVENT — 201 Created (seat tests need an event)
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events
+POST {{baseUrl}}/api/v1/events
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -56,7 +56,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ###  3. BULK CREATE SEATS — 201 Created (happy path)
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats
+POST {{baseUrl}}/api/v1/events/{{eventId}}/seats
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -76,7 +76,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ###  4. BULK CREATE SEATS — 409 Conflict (duplicate seat number)
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats
+POST {{baseUrl}}/api/v1/events/{{eventId}}/seats
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -90,7 +90,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ###  5. BULK CREATE SEATS — 400 Bad Request (empty list)
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats
+POST {{baseUrl}}/api/v1/events/{{eventId}}/seats
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -102,7 +102,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ###  6. ACTIVATE EVENT — 200 OK (seats now exist)
 ### ============================================================
-PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+PATCH {{baseUrl}}/api/v1/events/{{eventId}}/status
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -133,9 +133,37 @@ Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
-### 10. UPDATE SEAT — 200 OK (change category/price/status)
+### 10. LIST SEATS — 200 OK (combined filters: status + category)
 ### ============================================================
-PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats/{{seatId}}
+GET {{baseUrl}}/api/v1/events/{{eventId}}/seats?status=AVAILABLE&category=VIP
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 11. LIST SEATS — 404 Not Found (invalid eventId)
+### ============================================================
+GET {{baseUrl}}/api/v1/events/999999/seats
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### 12. BULK CREATE SEATS — 404 Not Found (invalid eventId)
+### ============================================================
+POST {{baseUrl}}/api/v1/events/999999/seats
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "seats": [
+    { "seatNumber": "Z1", "category": "VIP", "price": 199.99 }
+  ]
+}
+
+
+### ============================================================
+### 13. UPDATE SEAT — 200 OK (change category/price/status)
+### ============================================================
+PUT {{baseUrl}}/api/v1/events/{{eventId}}/seats/{{seatId}}
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -147,9 +175,9 @@ Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
-### 11. UPDATE SEAT — 400 Bad Request (status BOOKED not allowed)
+### 14. UPDATE SEAT — 400 Bad Request (status BOOKED not allowed)
 ### ============================================================
-PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats/{{seatId}}
+PUT {{baseUrl}}/api/v1/events/{{eventId}}/seats/{{seatId}}
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -161,9 +189,47 @@ Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
-### 12. UPDATE SEAT — 404 Not Found (invalid seatId)
+### 15. UPDATE SEAT — 400 Bad Request (missing required fields)
 ### ============================================================
-PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats/999999
+PUT {{baseUrl}}/api/v1/events/{{eventId}}/seats/{{seatId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{}
+
+
+### ============================================================
+### 16. UPDATE SEAT — 400 Bad Request (invalid price: must be > 0)
+### ============================================================
+PUT {{baseUrl}}/api/v1/events/{{eventId}}/seats/{{seatId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "category": "STANDARD",
+  "price": 0,
+  "status": "AVAILABLE"
+}
+
+
+### ============================================================
+### 17. UPDATE SEAT — 400 Bad Request (invalid status enum)
+### ============================================================
+PUT {{baseUrl}}/api/v1/events/{{eventId}}/seats/{{seatId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "category": "STANDARD",
+  "price": 99.99,
+  "status": "RESERVED"
+}
+
+
+### ============================================================
+### 18. UPDATE SEAT — 404 Not Found (invalid seatId)
+### ============================================================
+PUT {{baseUrl}}/api/v1/events/{{eventId}}/seats/999999
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 

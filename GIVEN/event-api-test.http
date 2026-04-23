@@ -1,7 +1,7 @@
 ### ============================================================
 ### Event API — IntelliJ HTTP Client Test File
 ### Base URL : http://localhost:8081
-### Auth     : Bearer token required (ADMIN for /api/v1/admin/**, ADMIN or CUSTOMER for /api/v1/events)
+### Auth     : Bearer token required (ADMIN for write operations, ADMIN or CUSTOMER for read operations)
 ### Note     : Run requests top-to-bottom on a fresh DB.
 ###            Copy the `id` from each 201 Created response
 ###            and paste it into the @eventId variable below.
@@ -36,7 +36,7 @@ Content-Type: application/json
 ### Expected: 201 Created
 ###           Response body: event with status "INACTIVE"
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events
+POST {{baseUrl}}/api/v1/events
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -53,7 +53,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ### Expected: 201 Created, description is null / absent in response
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events
+POST {{baseUrl}}/api/v1/events
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -70,7 +70,7 @@ Authorization: Bearer {{adminToken}}
 ### Expected: 400 ValidationFailed
 ###           details[] lists "name" and "venue" as missing
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events
+POST {{baseUrl}}/api/v1/events
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -86,7 +86,7 @@ Authorization: Bearer {{adminToken}}
 ###           details[].field = "eventDateTime"
 ###           details[].message contains "future"
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events
+POST {{baseUrl}}/api/v1/events
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -102,7 +102,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ### Expected: 400 ValidationFailed or 400 HttpMessageNotReadable
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events
+POST {{baseUrl}}/api/v1/events
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -114,7 +114,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ### Expected: 400 ValidationFailed, details[].field = "name"
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events
+POST {{baseUrl}}/api/v1/events
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -132,7 +132,7 @@ Authorization: Bearer {{adminToken}}
 ### Expected      : 200 OK, updated fields reflected in response
 ### Note          : status is NOT changed by this endpoint
 ### ============================================================
-PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}
+PUT {{baseUrl}}/api/v1/events/{{eventId}}
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -149,7 +149,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ### Expected: 404 ResourceNotFound
 ### ============================================================
-PUT {{baseUrl}}/api/v1/admin/events/999999
+PUT {{baseUrl}}/api/v1/events/999999
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -165,7 +165,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ### Expected: 400 ValidationFailed
 ### ============================================================
-PUT {{baseUrl}}/api/v1/admin/events/{{eventId}}
+PUT {{baseUrl}}/api/v1/events/{{eventId}}
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -176,12 +176,27 @@ Authorization: Bearer {{adminToken}}
 
 
 ### ============================================================
+###  9A. ACTIVATE EVENT — 409 Conflict (event has no seats)
+### ============================================================
+### Pre-condition : event @eventId exists with status "INACTIVE" and no seats
+### Expected      : 409 EventHasNoSeats
+### ============================================================
+PATCH {{baseUrl}}/api/v1/events/{{eventId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+
+### ============================================================
 ### 10. ACTIVATE EVENT — 200 OK (INACTIVE → ACTIVE)
 ### ============================================================
-### Pre-condition : event @eventId has status "INACTIVE"
+### Pre-condition : event @eventId has status "INACTIVE" and has at least one seat
 ### Expected      : 200 OK, status changes to "ACTIVE"
 ### ============================================================
-PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+PATCH {{baseUrl}}/api/v1/events/{{eventId}}/status
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -196,7 +211,7 @@ Authorization: Bearer {{adminToken}}
 ### Pre-condition : event @eventId is already "ACTIVE" (run #10 first)
 ### Expected      : 409 EventAlreadyActive
 ### ============================================================
-PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+PATCH {{baseUrl}}/api/v1/events/{{eventId}}/status
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -211,7 +226,7 @@ Authorization: Bearer {{adminToken}}
 ### Pre-condition : event @eventId is "ACTIVE"
 ### Expected      : 200 OK, status changes to "INACTIVE"
 ### ============================================================
-PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+PATCH {{baseUrl}}/api/v1/events/{{eventId}}/status
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -226,7 +241,7 @@ Authorization: Bearer {{adminToken}}
 ### Pre-condition : event @eventId is already "INACTIVE" (run #12 first)
 ### Expected      : 409 EventAlreadyInactive
 ### ============================================================
-PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+PATCH {{baseUrl}}/api/v1/events/{{eventId}}/status
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -241,7 +256,7 @@ Authorization: Bearer {{adminToken}}
 ### Expected: 400 ValidationFailed or HttpMessageNotReadable
 ###           "PUBLISHED" is not a valid EventStatus enum value
 ### ============================================================
-PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+PATCH {{baseUrl}}/api/v1/events/{{eventId}}/status
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -255,7 +270,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ### Expected: 404 ResourceNotFound
 ### ============================================================
-PATCH {{baseUrl}}/api/v1/admin/events/999999/status
+PATCH {{baseUrl}}/api/v1/events/999999/status
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -367,7 +382,7 @@ Authorization: Bearer {{adminToken}}
 ### Expected      : 204 No Content, empty body
 ### Note          : Soft-deletes the event and related seats/bookings
 ### ============================================================
-DELETE {{baseUrl}}/api/v1/admin/events/{{eventId}}
+DELETE {{baseUrl}}/api/v1/events/{{eventId}}
 Authorization: Bearer {{adminToken}}
 
 
@@ -376,7 +391,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ### Expected: 404 ResourceNotFound
 ### ============================================================
-DELETE {{baseUrl}}/api/v1/admin/events/999999
+DELETE {{baseUrl}}/api/v1/events/999999
 Authorization: Bearer {{adminToken}}
 
 
@@ -386,5 +401,5 @@ Authorization: Bearer {{adminToken}}
 ### Pre-condition : event @eventId has at least one CONFIRMED booking
 ### Expected      : 204 No Content (soft delete still allowed)
 ### ============================================================
-DELETE {{baseUrl}}/api/v1/admin/events/{{eventId}}
+DELETE {{baseUrl}}/api/v1/events/{{eventId}}
 Authorization: Bearer {{adminToken}}

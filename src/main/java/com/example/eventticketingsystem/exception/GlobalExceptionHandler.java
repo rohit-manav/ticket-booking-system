@@ -1,6 +1,8 @@
 package com.example.eventticketingsystem.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,6 +18,12 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private final MessageSource messageSource;
+
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<FieldErrorDetail> details = ex.getBindingResult().getFieldErrors().stream()
@@ -25,7 +33,7 @@ public class GlobalExceptionHandler {
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "ValidationFailed",
-                "One or more fields failed validation.",
+                messageSource.getMessage("error.validation.failed", null, LocaleContextHolder.getLocale()),
                 request.getRequestURI(),
                 details
         );
@@ -38,7 +46,7 @@ public class GlobalExceptionHandler {
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "ValidationFailed",
-                "Malformed request payload or invalid enum/date format.",
+                messageSource.getMessage("error.validation.malformedPayload", null, LocaleContextHolder.getLocale()),
                 request.getRequestURI(),
                 null
         );
@@ -77,7 +85,7 @@ public class GlobalExceptionHandler {
                 Instant.now(),
                 HttpStatus.FORBIDDEN.value(),
                 "EventNotActive",
-                ex.getMessage(),
+                messageSource.getMessage("error.event.notActive", null, LocaleContextHolder.getLocale()),
                 request.getRequestURI(),
                 null
         );
@@ -118,7 +126,7 @@ public class GlobalExceptionHandler {
                 Instant.now(),
                 HttpStatus.FORBIDDEN.value(),
                 "Forbidden",
-                ex.getMessage(),
+                messageSource.getMessage("error.access.denied", null, LocaleContextHolder.getLocale()),
                 request.getRequestURI(),
                 null
         );

@@ -1,13 +1,12 @@
 ### ============================================================
 ### Booking API — IntelliJ HTTP Client Test File
 ### Base URL : http://localhost:8081
-### Auth     : Bearer token required (CUSTOMER for /api/v1/bookings, ADMIN for /api/v1/admin/**)
+### Auth     : Bearer token required (CUSTOMER for /api/v1/bookings, ADMIN for create/update operations)
 ### Note     : Run requests top-to-bottom on a fresh DB.
 ### ============================================================
 
 ### ---- Shared variables ----------------------------------------
 @baseUrl   = http://localhost:8081
-@customerUserId = 7
 
 ### ============================================================
 ###  0. AUTH LOGIN — 200 OK (get JWT token for customer)
@@ -53,7 +52,7 @@ Content-Type: application/json
 ### ============================================================
 ###  2. CREATE EVENT — 201 Created (booking tests need an event)
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events
+POST {{baseUrl}}/api/v1/events
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -74,7 +73,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ###  3. BULK CREATE SEATS — 201 Created
 ### ============================================================
-POST {{baseUrl}}/api/v1/admin/events/{{eventId}}/seats
+POST {{baseUrl}}/api/v1/events/{{eventId}}/seats
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -97,7 +96,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ###  4. ACTIVATE EVENT — 200 OK
 ### ============================================================
-PATCH {{baseUrl}}/api/v1/admin/events/{{eventId}}/status
+PATCH {{baseUrl}}/api/v1/events/{{eventId}}/status
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
@@ -114,7 +113,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ###  5. CREATE BOOKING — 201 Created (happy path)
 ### ============================================================
-POST {{baseUrl}}/api/v1/bookings?userId={{customerUserId}}
+POST {{baseUrl}}/api/v1/bookings
 Content-Type: application/json
 Authorization: Bearer {{customerToken}}
 
@@ -133,7 +132,7 @@ Authorization: Bearer {{customerToken}}
 ### ============================================================
 ###  6. CREATE BOOKING — 409 Conflict (seat unavailable)
 ### ============================================================
-POST {{baseUrl}}/api/v1/bookings?userId={{customerUserId}}
+POST {{baseUrl}}/api/v1/bookings
 Content-Type: application/json
 Authorization: Bearer {{customerToken}}
 
@@ -151,7 +150,7 @@ Authorization: Bearer {{customerToken}}
 ### ============================================================
 ###  7. GET MY BOOKINGS — 200 OK
 ### ============================================================
-GET {{baseUrl}}/api/v1/bookings?userId={{customerUserId}}
+GET {{baseUrl}}/api/v1/bookings
 Authorization: Bearer {{customerToken}}
 
 > {%
@@ -163,7 +162,7 @@ Authorization: Bearer {{customerToken}}
 ### ============================================================
 ###  8. GET BOOKING BY ID — 200 OK (owner)
 ### ============================================================
-GET {{baseUrl}}/api/v1/bookings/{{bookingId}}?userId={{customerUserId}}
+GET {{baseUrl}}/api/v1/bookings/{{bookingId}}
 Authorization: Bearer {{customerToken}}
 
 > {%
@@ -175,7 +174,7 @@ Authorization: Bearer {{customerToken}}
 ### ============================================================
 ###  9. CONFIRM BOOKING — 200 OK
 ### ============================================================
-POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/confirm?userId={{customerUserId}}
+POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/confirm
 Authorization: Bearer {{customerToken}}
 
 > {%
@@ -187,7 +186,7 @@ Authorization: Bearer {{customerToken}}
 ### ============================================================
 ### 10. CONFIRM BOOKING — 409 Conflict (already confirmed)
 ### ============================================================
-POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/confirm?userId={{customerUserId}}
+POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/confirm
 Authorization: Bearer {{customerToken}}
 
 > {%
@@ -199,7 +198,7 @@ Authorization: Bearer {{customerToken}}
 ### ============================================================
 ### 11. CANCEL BOOKING — 409 Conflict (invalid transition after confirm)
 ### ============================================================
-POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel?userId={{customerUserId}}
+POST {{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel
 Authorization: Bearer {{customerToken}}
 
 > {%
@@ -211,7 +210,7 @@ Authorization: Bearer {{customerToken}}
 ### ============================================================
 ### 12. ADMIN LIST ALL BOOKINGS — 200 OK
 ### ============================================================
-GET {{baseUrl}}/api/v1/admin/bookings
+GET {{baseUrl}}/api/v1/bookings
 Authorization: Bearer {{adminToken}}
 
 > {%
@@ -223,7 +222,7 @@ Authorization: Bearer {{adminToken}}
 ### ============================================================
 ### 13. ADMIN GET BOOKING BY ID — 200 OK
 ### ============================================================
-GET {{baseUrl}}/api/v1/admin/bookings/{{bookingId}}
+GET {{baseUrl}}/api/v1/bookings/{{bookingId}}
 Authorization: Bearer {{adminToken}}
 
 > {%

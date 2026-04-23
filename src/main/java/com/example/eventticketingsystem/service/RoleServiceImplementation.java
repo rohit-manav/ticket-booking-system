@@ -10,6 +10,9 @@ import com.example.eventticketingsystem.exception.ConflictException;
 import com.example.eventticketingsystem.exception.ResourceNotFoundException;
 import com.example.eventticketingsystem.repository.PermissionRepository;
 import com.example.eventticketingsystem.repository.RoleRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -32,6 +35,7 @@ public class RoleServiceImplementation implements RoleService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "rolesList", key = "#limit + ':' + #offset")
     public PagedResponse<RoleResponse> listRoles(int limit, int offset) {
         int page = offset / Math.max(limit, 1);
         Page<Role> rolePage = roleRepository.findAll(PageRequest.of(page, limit));
@@ -45,6 +49,7 @@ public class RoleServiceImplementation implements RoleService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "rolesList", allEntries = true)
     public RoleResponse createRole(RoleRequest request) {
         if (roleRepository.existsByName(request.getName())) {
             throw new ConflictException("DuplicateRoleName",
@@ -60,6 +65,7 @@ public class RoleServiceImplementation implements RoleService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "rolesById", key = "#roleId")
     public RoleResponse getRoleById(Long roleId) {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -69,6 +75,10 @@ public class RoleServiceImplementation implements RoleService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "rolesById", key = "#roleId"),
+            @CacheEvict(cacheNames = "rolesList", allEntries = true)
+    })
     public RoleResponse updateRole(Long roleId, RoleRequest request) {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -89,6 +99,10 @@ public class RoleServiceImplementation implements RoleService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "rolesById", key = "#roleId"),
+            @CacheEvict(cacheNames = "rolesList", allEntries = true)
+    })
     public void deleteRole(Long roleId) {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -104,6 +118,10 @@ public class RoleServiceImplementation implements RoleService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "rolesById", key = "#roleId"),
+            @CacheEvict(cacheNames = "rolesList", allEntries = true)
+    })
     public RoleResponse assignPermissions(Long roleId, AssignPermissionsRequest request) {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException(

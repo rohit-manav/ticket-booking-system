@@ -24,12 +24,15 @@ public class JwtTokenProvider {
 
     private final SecretKey key;
     private final long jwtExpiration;
+    private final long jwtRefreshExpiration;
 
     public JwtTokenProvider(
             @Value("${jwt.secret}") String jwtSecret,
-            @Value("${jwt.expiration:86400000}") long jwtExpiration) {
+            @Value("${jwt.expiration:86400000}") long jwtExpiration,
+            @Value("${jwt.refreshExpiration:604800000}") long jwtRefreshExpiration) {
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpiration = jwtExpiration;
+        this.jwtRefreshExpiration = jwtRefreshExpiration;
     }
 
     public SecretKey getKey() {
@@ -38,6 +41,10 @@ public class JwtTokenProvider {
 
     public long getJwtExpiration() {
         return jwtExpiration;
+    }
+
+    public long getJwtRefreshExpiration() {
+        return jwtRefreshExpiration;
     }
 
     /**
@@ -72,5 +79,9 @@ public class JwtTokenProvider {
         }
         return roles.stream().collect(Collectors.toSet());
     }
-}
 
+    public String getScope(Claims claims) {
+        String scope = claims.get("scope", String.class);
+        return scope == null ? "" : scope.trim();
+    }
+}

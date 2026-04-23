@@ -9,7 +9,9 @@ import com.example.eventticketingsystem.entity.Booking;
 import com.example.eventticketingsystem.entity.BookingItem;
 import com.example.eventticketingsystem.entity.Event;
 import com.example.eventticketingsystem.entity.Seat;
+import com.example.eventticketingsystem.entity.enums.BookingStatus;
 import com.example.eventticketingsystem.entity.enums.EventStatus;
+import com.example.eventticketingsystem.entity.enums.SeatStatus;
 import com.example.eventticketingsystem.exception.ConflictException;
 import com.example.eventticketingsystem.exception.ResourceNotFoundException;
 import com.example.eventticketingsystem.repository.EventRepository;
@@ -111,6 +113,18 @@ public class EventServiceImplementation implements EventService {
 
         if (request.getStatus() == EventStatus.ACTIVE && !seatRepository.existsByEvent_Id(eventId)) {
             throw new ConflictException("EventHasNoSeats", "Event '" + event.getName() + "' cannot be activated without seats.");
+        }
+
+        if (request.getStatus() == EventStatus.INACTIVE) {
+            for (Booking booking : event.getBookings()) {
+                booking.setStatus(BookingStatus.CANCELLED);
+            }
+
+            List<Seat> seats = seatRepository.findByEvent_Id(eventId);
+            for (Seat seat : seats) {
+                seat.setStatus(SeatStatus.DISABLED);
+            }
+            seatRepository.saveAll(seats);
         }
 
         event.setStatus(request.getStatus());

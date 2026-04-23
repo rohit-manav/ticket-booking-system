@@ -1,0 +1,123 @@
+### ============================================================
+### Auth API — IntelliJ HTTP Client Test File
+### Base URL : http://localhost:8081
+### Auth     : Public endpoints (/api/v1/auth/**)
+### Note     : Run top-to-bottom. Login and refresh token are auto-captured.
+### ============================================================
+
+### ---- Shared variables ----------------------------------------
+@baseUrl = http://localhost:8081
+@newUserEmail = customer.auto.{{$timestamp}}@example.com
+@newUserPassword = customer@1234
+
+### ============================================================
+###  1. REGISTER — 201 Created (happy path)
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "Auto Customer",
+  "email": "{{newUserEmail}}",
+  "password": "{{newUserPassword}}"
+}
+
+
+### ============================================================
+###  2. REGISTER — 409 Conflict (duplicate email)
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "Auto Customer Duplicate",
+  "email": "{{newUserEmail}}",
+  "password": "{{newUserPassword}}"
+}
+
+
+### ============================================================
+###  3. REGISTER — 400 Bad Request (invalid payload)
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "A",
+  "email": "not-an-email",
+  "password": "123"
+}
+
+
+### ============================================================
+###  4. LOGIN — 200 OK (newly registered user)
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{newUserEmail}}",
+  "password": "{{newUserPassword}}"
+}
+
+> {%
+  client.global.set("customerAccessToken", response.body.accessToken);
+  client.global.set("customerRefreshToken", response.body.refreshToken);
+%}
+
+
+### ============================================================
+###  5. LOGIN — 401 Unauthorized (wrong password)
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{newUserEmail}}",
+  "password": "wrong-password"
+}
+
+
+### ============================================================
+###  6. LOGIN — 200 OK (admin)
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Admin@1234"
+}
+
+> {%
+  client.global.set("adminAccessToken", response.body.accessToken);
+  client.global.set("adminRefreshToken", response.body.refreshToken);
+%}
+
+
+### ============================================================
+###  7. REFRESH — 200 OK (customer refresh token)
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{customerRefreshToken}}"
+}
+
+> {%
+  client.global.set("customerAccessToken", response.body.accessToken);
+  client.global.set("customerRefreshToken", response.body.refreshToken);
+%}
+
+
+### ============================================================
+###  8. REFRESH — 401 Unauthorized (invalid token)
+### ============================================================
+POST {{baseUrl}}/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "invalid.refresh.token"
+}
+

@@ -7,6 +7,9 @@ import com.example.eventticketingsystem.entity.Permission;
 import com.example.eventticketingsystem.exception.ConflictException;
 import com.example.eventticketingsystem.exception.ResourceNotFoundException;
 import com.example.eventticketingsystem.repository.PermissionRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ public class PermissionServiceImplementation implements PermissionService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "permissionsList", key = "#limit + ':' + #offset")
     public PagedResponse<PermissionResponse> listPermissions(int limit, int offset) {
         int page = offset / Math.max(limit, 1);
         Page<Permission> permPage = permissionRepository.findAll(PageRequest.of(page, limit));
@@ -38,6 +42,7 @@ public class PermissionServiceImplementation implements PermissionService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "permissionsList", allEntries = true)
     public PermissionResponse createPermission(PermissionRequest request) {
         if (permissionRepository.existsByName(request.getName())) {
             throw new ConflictException("DuplicatePermissionName",
@@ -53,6 +58,7 @@ public class PermissionServiceImplementation implements PermissionService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "permissionsById", key = "#permissionId")
     public PermissionResponse getPermissionById(Long permissionId) {
         Permission permission = permissionRepository.findById(permissionId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -62,6 +68,10 @@ public class PermissionServiceImplementation implements PermissionService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "permissionsById", key = "#permissionId"),
+            @CacheEvict(cacheNames = "permissionsList", allEntries = true)
+    })
     public PermissionResponse updatePermission(Long permissionId, PermissionRequest request) {
         Permission permission = permissionRepository.findById(permissionId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -82,6 +92,10 @@ public class PermissionServiceImplementation implements PermissionService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "permissionsById", key = "#permissionId"),
+            @CacheEvict(cacheNames = "permissionsList", allEntries = true)
+    })
     public void deletePermission(Long permissionId) {
         Permission permission = permissionRepository.findById(permissionId)
                 .orElseThrow(() -> new ResourceNotFoundException(

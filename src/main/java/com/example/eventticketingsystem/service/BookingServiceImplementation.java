@@ -252,7 +252,7 @@ public class BookingServiceImplementation implements BookingService {
 
     // -------------------------------------------------------------------------
     // Admin: List All Bookings (with optional filters)
-    // GET /api/v1/admin/bookings
+    // GET /api/v1/bookings
     // -------------------------------------------------------------------------
     @Override
     @Transactional(readOnly = true)
@@ -275,7 +275,7 @@ public class BookingServiceImplementation implements BookingService {
 
     // -------------------------------------------------------------------------
     // Admin: Get Booking By Id (no ownership check)
-    // GET /api/v1/admin/bookings/{bookingId}
+    // GET /api/v1/bookings/{bookingId}
     // -------------------------------------------------------------------------
     @Override
     @Transactional(readOnly = true)

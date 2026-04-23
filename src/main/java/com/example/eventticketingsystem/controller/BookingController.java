@@ -5,10 +5,14 @@ import com.example.eventticketingsystem.dto.booking.response.BookingResponse;
 import com.example.eventticketingsystem.dto.common.PagedResponse;
 import com.example.eventticketingsystem.entity.enums.BookingStatus;
 import com.example.eventticketingsystem.service.BookingService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,13 +22,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Single controller for all Booking operations.
- * Access is controlled at the method level via @PreAuthorize:
- *   - CUSTOMER : create, view own bookings, confirm/cancel/payment-failed
- *   - ADMIN    : view all bookings, view any booking by id
- * The currentUserId parameter represents the authenticated user's ID.
- * TODO: Replace @RequestParam userId with @AuthenticationPrincipal once JWT is wired up.
+ * Access is controlled via permission authorities from JWT scopes.
+ * The currentUserId parameter is resolved from JWT via @AuthenticationPrincipal.
  */
 @RestController
+@Tag(
+        name = "Bookings",
+        description = "Booking lifecycle endpoints."
+)
 public class BookingController {
 
     private final BookingService bookingService;
@@ -38,40 +43,51 @@ public class BookingController {
     // POST /api/v1/bookings
     // -------------------------------------------------------------------------
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('booking')")
     @PostMapping("/api/v1/bookings")
     public ResponseEntity<BookingResponse> createBooking(
             @Valid @RequestBody BookingCreateRequest request,
-            @RequestParam Long userId) {                        // TODO: replace with @AuthenticationPrincipal
-        return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.createBooking(userId, request));
+            @AuthenticationPrincipal Long currentUserId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.createBooking(currentUserId, request));
     }
 
     // -------------------------------------------------------------------------
-    // Customer: List My Bookings
+    // Shared: List Bookings (CUSTOMER = own bookings, ADMIN = all bookings)
     // GET /api/v1/bookings
     // -------------------------------------------------------------------------
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('booking')")
     @GetMapping("/api/v1/bookings")
-    public PagedResponse<BookingResponse> listMyBookings(
-            @RequestParam Long userId,                          // TODO: replace with @AuthenticationPrincipal
+    public PagedResponse<BookingResponse> listBookings(
+            @AuthenticationPrincipal Long currentUserId,
             @RequestParam(defaultValue = "25") int limit,
             @RequestParam(defaultValue = "0") int offset,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        return bookingService.listMyBookings(userId, limit, offset, sort);
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @RequestParam(required = false) BookingStatus status,
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) Long userId,
+            Authentication authentication) {
+        if (isAdmin(authentication)) {
+            return bookingService.listAllBookings(limit, offset, sort, status, eventId, userId);
+        }
+        return bookingService.listMyBookings(currentUserId, limit, offset, sort);
     }
 
     // -------------------------------------------------------------------------
-    // Customer (owner): Get Booking By Id
+    // Shared: Get Booking By Id (CUSTOMER = own booking, ADMIN = any booking)
     // GET /api/v1/bookings/{bookingId}
     // -------------------------------------------------------------------------
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('booking')")
     @GetMapping("/api/v1/bookings/{bookingId}")
     public BookingResponse getBookingById(
             @PathVariable Long bookingId,
-            @RequestParam Long userId) {                        // TODO: replace with @AuthenticationPrincipal
-        return bookingService.getBookingById(bookingId, userId);
+            @AuthenticationPrincipal Long currentUserId,
+            Authentication authentication) {
+        if (isAdmin(authentication)) {
+            return bookingService.getBookingByIdAdmin(bookingId);
+        }
+        return bookingService.getBookingById(bookingId, currentUserId);
     }
 
     // -------------------------------------------------------------------------
@@ -79,12 +95,12 @@ public class BookingController {
     // POST /api/v1/bookings/{bookingId}/confirm
     // -------------------------------------------------------------------------
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('booking')")
     @PostMapping("/api/v1/bookings/{bookingId}/confirm")
     public BookingResponse confirmBooking(
             @PathVariable Long bookingId,
-            @RequestParam Long userId) {                        // TODO: replace with @AuthenticationPrincipal
-        return bookingService.confirmBooking(bookingId, userId);
+            @AuthenticationPrincipal Long currentUserId) {
+        return bookingService.confirmBooking(bookingId, currentUserId);
     }
 
     // -------------------------------------------------------------------------
@@ -92,12 +108,12 @@ public class BookingController {
     // POST /api/v1/bookings/{bookingId}/cancel
     // -------------------------------------------------------------------------
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('booking')")
     @PostMapping("/api/v1/bookings/{bookingId}/cancel")
     public BookingResponse cancelBooking(
             @PathVariable Long bookingId,
-            @RequestParam Long userId) {                        // TODO: replace with @AuthenticationPrincipal
-        return bookingService.cancelBooking(bookingId, userId);
+            @AuthenticationPrincipal Long currentUserId) {
+        return bookingService.cancelBooking(bookingId, currentUserId);
     }
 
     // -------------------------------------------------------------------------
@@ -105,40 +121,19 @@ public class BookingController {
     // POST /api/v1/bookings/{bookingId}/payment-failed
     // -------------------------------------------------------------------------
 
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    @PreAuthorize("hasAuthority('booking')")
     @PostMapping("/api/v1/bookings/{bookingId}/payment-failed")
     public BookingResponse markPaymentFailed(
             @PathVariable Long bookingId,
-            @RequestParam Long userId) {                        // TODO: replace with @AuthenticationPrincipal
-        return bookingService.markPaymentFailed(bookingId, userId);
+            @AuthenticationPrincipal Long currentUserId) {
+        return bookingService.markPaymentFailed(bookingId, currentUserId);
     }
 
-    // -------------------------------------------------------------------------
-    // Admin: List All Bookings (with optional filters)
-    // GET /api/v1/admin/bookings
-    // -------------------------------------------------------------------------
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/api/v1/admin/bookings")
-    public PagedResponse<BookingResponse> listAllBookings(
-            @RequestParam(defaultValue = "25") int limit,
-            @RequestParam(defaultValue = "0") int offset,
-            @RequestParam(defaultValue = "createdAt,desc") String sort,
-            @RequestParam(required = false) BookingStatus status,
-            @RequestParam(required = false) Long eventId,
-            @RequestParam(required = false) Long userId) {
-        return bookingService.listAllBookings(limit, offset, sort, status, eventId, userId);
-    }
-
-    // -------------------------------------------------------------------------
-    // Admin: Get Any Booking By Id
-    // GET /api/v1/admin/bookings/{bookingId}
-    // -------------------------------------------------------------------------
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/api/v1/admin/bookings/{bookingId}")
-    public BookingResponse getBookingByIdAdmin(@PathVariable Long bookingId) {
-        return bookingService.getBookingByIdAdmin(bookingId);
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null
+                && authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
     }
 }
 

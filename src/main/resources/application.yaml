@@ -18,9 +18,18 @@ spring:
         format_sql: true
     open-in-view: false
 
+  cache:
+    cache-names: rolesById, rolesList, permissionsById, permissionsList
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=10m
+
 jwt:
   secret: Ofk62VcNHTDpZ3d3C7SQItHERO5FM0QV6MZxXNnzfbSDbg+fuS74PyfZWpfdef1/hlc+9W5GRBSQ+6jCjVQMpA==
-  expiration: 86400000  # 24 hours in milliseconds
+  expiration: 3600000  # 1 hour in milliseconds (3600 seconds)
+  refreshExpiration: 604800000  # 7 days in milliseconds
+
+auth:
+  default-customer-role: CUSTOMER
 
 server:
   port: 8081

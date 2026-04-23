@@ -36,32 +36,37 @@ DELETE FROM roles WHERE id > 0 OR id = 0;
 -- =============================================================================
 -- INSERT: Admin user (BCrypt hash of 'Admin@1234' with strength 12)
 -- =============================================================================
-INSERT INTO users (name, email, password, created_at, updated_at)
+INSERT INTO users (name, email, password, created_at, updated_at, deleted)
 VALUES ('Admin', 'admin@example.com',
         '$2b$12$56UcNt6H.VV9gpDW39qTEeli5o5IQRVwZ4xDSKXNklOTIE7swwQki',
-        NOW(), NOW());
+        NOW(), NOW(), FALSE);
 
 -- =============================================================================
 -- INSERT: Roles
 -- =============================================================================
-INSERT INTO roles (name, created_at, updated_at) VALUES ('ADMIN', NOW(), NOW());
-INSERT INTO roles (name, created_at, updated_at) VALUES ('CUSTOMER', NOW(), NOW());
+INSERT INTO roles (name, created_at, updated_at, deleted) VALUES ('ADMIN', NOW(), NOW(), FALSE);
+INSERT INTO roles (name, created_at, updated_at, deleted) VALUES ('CUSTOMER', NOW(), NOW(), FALSE);
 
 -- =============================================================================
 -- INSERT: Permissions
 -- =============================================================================
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('CREATE_EVENT', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('UPDATE_EVENT', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('DELETE_EVENT', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('MANAGE_SEATS', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('VIEW_ALL_BOOKINGS', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('MANAGE_USERS', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('MANAGE_ROLES', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('MANAGE_PERMISSIONS', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('VIEW_EVENTS', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('VIEW_SEATS', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('BOOK_SEAT', NOW(), NOW());
-INSERT INTO permissions (name, created_at, updated_at) VALUES ('MANAGE_OWN_BOOKINGS', NOW(), NOW());
+-- Event permissions
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('event.create', NOW(), NOW(), FALSE);
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('event.update', NOW(), NOW(), FALSE);
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('event.delete', NOW(), NOW(), FALSE);
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('event.read', NOW(), NOW(), FALSE);
+
+-- Seat permissions
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('seat.create', NOW(), NOW(), FALSE);
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('seat.update', NOW(), NOW(), FALSE);
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('seat.read', NOW(), NOW(), FALSE);
+
+-- Booking permissions
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('booking', NOW(), NOW(), FALSE);
+
+-- User management (admin only in role mapping below)
+INSERT INTO permissions (name, created_at, updated_at, deleted) VALUES ('profile', NOW(), NOW(), FALSE);
+
 
 -- =============================================================================
 -- MAP: Role-Permission mappings
@@ -77,7 +82,7 @@ WHERE r.name = 'ADMIN';
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
-JOIN permissions p ON p.name IN ('VIEW_EVENTS', 'VIEW_SEATS', 'BOOK_SEAT', 'MANAGE_OWN_BOOKINGS')
+JOIN permissions p ON p.name IN ('event.read', 'seat.read', 'booking')
 WHERE r.name = 'CUSTOMER';
 
 -- =============================================================================

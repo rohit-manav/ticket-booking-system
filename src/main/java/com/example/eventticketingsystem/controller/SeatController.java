@@ -7,6 +7,7 @@ import com.example.eventticketingsystem.dto.seat.response.SeatListResponse;
 import com.example.eventticketingsystem.dto.seat.response.SeatResponse;
 import com.example.eventticketingsystem.entity.enums.SeatStatus;
 import com.example.eventticketingsystem.service.SeatService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Single controller for all Seat operations.
- * Access is controlled at the method level via @PreAuthorize:
- *   - ADMIN  : write operations (bulk-create / update a seat)
- *   - ADMIN or CUSTOMER : read operation (list seats for an event)
+ * Access is controlled via permission authorities from JWT scopes.
  */
 @RestController
+@Tag(
+        name = "Seats",
+        description = "Seat inventory endpoints."
+)
 public class SeatController {
 
     private final SeatService seatService;
@@ -35,11 +38,11 @@ public class SeatController {
     }
 
     // -------------------------------------------------------------------------
-    // Admin operations  —  /api/v1/admin/events/{eventId}/seats
+    // Admin operations  —  /api/v1/events/{eventId}/seats
     // -------------------------------------------------------------------------
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/api/v1/admin/events/{eventId}/seats")
+    @PreAuthorize("hasAuthority('seat.create')")
+    @PostMapping("/api/v1/events/{eventId}/seats")
     public ResponseEntity<SeatCreateResponse> createSeats(
             @PathVariable Long eventId,
             @Valid @RequestBody SeatCreateRequest request) {
@@ -47,8 +50,8 @@ public class SeatController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/api/v1/admin/events/{eventId}/seats/{seatId}")
+    @PreAuthorize("hasAuthority('seat.update')")
+    @PutMapping("/api/v1/events/{eventId}/seats/{seatId}")
     public ResponseEntity<SeatResponse> updateSeat(
             @PathVariable Long eventId,
             @PathVariable Long seatId,
@@ -60,7 +63,7 @@ public class SeatController {
     // Shared operation  —  /api/v1/events/{eventId}/seats  (ADMIN + CUSTOMER)
     // -------------------------------------------------------------------------
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
+    @PreAuthorize("hasAuthority('seat.read')")
     @GetMapping("/api/v1/events/{eventId}/seats")
     public SeatListResponse listSeats(
             @PathVariable Long eventId,
